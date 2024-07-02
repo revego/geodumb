@@ -23,14 +23,19 @@ import java.util.Date
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.location.Address
 import android.location.Geocoder
 import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
 import androidx.exifinterface.media.ExifInterface
+import com.google.android.gms.location.LocationServices
 import java.util.Locale
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), LocationListener {
+
+    private var latitude: Double? = null
+    private var longitude: Double? = null
+    private lateinit var locationManager: LocationManager
 
     private lateinit var takePhotoButton: Button
     private lateinit var sendEmailButton: Button
@@ -51,9 +56,12 @@ class MainActivity : AppCompatActivity() {
         sendEmailButton = findViewById(R.id.btn_send_email)
         imageView = findViewById(R.id.img_photo)
 
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
         takePhotoButton.setOnClickListener {
             Log.d("MainActivity", "Take Photo button clicked")
             if (checkPermissions()) {
+                //getLocationAndStartCamera()
                 takePhoto()
             } else {
                 requestPermissions()
@@ -62,8 +70,72 @@ class MainActivity : AppCompatActivity() {
 
         sendEmailButton.setOnClickListener {
             photoUri?.let { uri ->
-                sendEmail(uri)
+                val latitude = getLatitudeFromUri(uri)
+                val longitude = getLongitudeFromUri(uri)
+                val cityName = getCityName(latitude, longitude)
+                val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in $cityName"
+                //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                sendEmail(uri, message)
             } ?: Toast.makeText(this, "No photo to send", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getLocationAndStartCamera() {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location? ->
+                location?.let {
+                    // Salva le coordinate GPS nella variabile location
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+                    Log.d("MainActivity", "Latitude: $latitude, Longitude: $longitude")
+
+                    // Avvia l'intento della fotocamera
+                    startCameraIntent()
+                } ?: run {
+                    Toast.makeText(this, "Unable to retrieve location", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("MainActivity", "Error getting location: ${e.message}", e)
+                Toast.makeText(this, "Error getting location: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun startCameraIntent() {
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        if (takePictureIntent.resolveActivity(packageManager) != null) {
+            val photoFile: File? = try {
+                createImageFile()
+            } catch (ex: IOException) {
+                null
+            }
+            photoFile?.also {
+                photoUri = FileProvider.getUriForFile(
+                    this,
+                    "com.example.photoapp.provider", // Usa il tuo applicationId qui
+                    it
+                )
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+            }
         }
     }
 
@@ -71,19 +143,31 @@ class MainActivity : AppCompatActivity() {
         val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
         val writeStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
         val readStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+        val locationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         return cameraPermission == PackageManager.PERMISSION_GRANTED &&
                 writeStoragePermission == PackageManager.PERMISSION_GRANTED &&
-                readStoragePermission == PackageManager.PERMISSION_GRANTED
+                readStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                locationPermission == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestPermissions() {
         ActivityCompat.requestPermissions(this,
-            arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE),
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ),
             REQUEST_PERMISSIONS
         )
     }
 
     private fun takePhoto() {
+        // Request location updates to get current location
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
+        }
+
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         Log.d("MainActivity", "Preparing to take photo")
         // Rimuovi temporaneamente il controllo resolveActivity per debugging
@@ -101,7 +185,7 @@ class MainActivity : AppCompatActivity() {
             )
             Log.d("MainActivity", "Photo URI: $photoUri")
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+            this.startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
         } ?: run {
             Log.e("MainActivity", "Photo file is null")
         }
@@ -120,8 +204,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var currentPhotoPath: String? = null
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_PERMISSIONS) {
@@ -133,20 +215,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var currentPhotoPath: String? = null
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             photoUri?.let { uri ->
-                // Ottenere la posizione corrente
-                val location = getCurrentLocation()
-                location?.let {
-                    // Aggiungere le coordinate GPS ai metadati EXIF
-                    addGpsMetadata(uri, it)
-                    // Ottenere il nome della città dalle coordinate
-                    val cityName = getCityName(it)
-                    Toast.makeText(this, "City: $cityName", Toast.LENGTH_SHORT).show()
-                }
                 imageView.setImageURI(uri)
+                val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                Log.d("MainActivity", message)
+                // Imposta il listener per il bottone sendEmailButton con il messaggio
+                sendEmailButton.setOnClickListener {
+                    sendEmail(uri, message)
+                }
             }
         }
     }
@@ -175,12 +256,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getCityName(location: Location): String? {
-        val geocoder = Geocoder(this, Locale.getDefault())
-        val addresses: List<Address>? = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-        return addresses?.firstOrNull()?.locality
-    }
-
     private fun getCoordinates(photoUri: Uri): String {
         val inputStream = contentResolver.openInputStream(photoUri)
         inputStream?.use { stream ->
@@ -194,45 +269,49 @@ class MainActivity : AppCompatActivity() {
         return "Coordinates not found"
     }
 
-    private fun getCityName(photoUri: Uri): String {
-        val inputStream = contentResolver.openInputStream(photoUri)
-        inputStream?.use { stream ->
-            val exifInterface = ExifInterface(stream)
-            val latitude = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE)?.toDoubleOrNull()
-            val longitude = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE)?.toDoubleOrNull()
-
-            latitude?.let { lat ->
-                longitude?.let { long ->
-                    val geoCoder = Geocoder(this)
-                    val locationList = geoCoder.getFromLocation(lat, long, 1)
-
-                    if (locationList.isNullOrEmpty()) {
-                        return "City name not available"
-                    }
-
-                    val cityName = locationList[0].locality ?: "City name not found"
-
-                    return cityName
-                }
-            }
+    private fun getCityName(latitude: Double?, longitude: Double?): String {
+        if (latitude == null || longitude == null) return "City name not available"
+        val geocoder = Geocoder(this, Locale.getDefault())
+        val locationList = geocoder.getFromLocation(latitude, longitude, 1)
+        return if (!locationList.isNullOrEmpty()) {
+            locationList[0].locality ?: "City name not available"
+        } else {
+            "City name not available"
         }
-        return "City name not available"
     }
 
-    private fun sendEmail(photoUri: Uri) {
-        val coordinates = getCoordinates(photoUri)
-        val city = getCityName(photoUri)
+    override fun onLocationChanged(location: Location) {
+        latitude = location.latitude
+        longitude = location.longitude
+        locationManager.removeUpdates(this)
+    }
 
+    private fun sendEmail(photoUri: Uri, message: String) {
         val emailIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
             putExtra(Intent.EXTRA_EMAIL, arrayOf("info@citylog.cloud"))
-            putExtra(Intent.EXTRA_SUBJECT, "Report")
-            //putExtra(Intent.EXTRA_TEXT, "Here is the report.")
-            putExtra(Intent.EXTRA_TEXT, "Here is the photo taken at coordinates: $coordinates, in $city.")
+            putExtra(Intent.EXTRA_SUBJECT, "report")
+            putExtra(Intent.EXTRA_TEXT, message)
             putExtra(Intent.EXTRA_STREAM, photoUri)
         }
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
         }
+    }
+
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+
+    override fun onProviderEnabled(provider: String) {}
+
+    override fun onProviderDisabled(provider: String) {}
+
+    private fun getLatitudeFromUri(uri: Uri): Double {
+        val exifInterface = androidx.exifinterface.media.ExifInterface(uri.path!!)
+        return exifInterface.latLong?.get(0) ?: 0.0
+    }
+
+    private fun getLongitudeFromUri(uri: Uri): Double {
+        val exifInterface = androidx.exifinterface.media.ExifInterface(uri.path!!)
+        return exifInterface.latLong?.get(1) ?: 0.0
     }
 }
