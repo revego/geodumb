@@ -38,8 +38,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private var latitude: Double? = null
     private var longitude: Double? = null
-    private lateinit var locationManager: LocationManager
+    private val SENT_IMAGES_PREF = "SentImagesPref"
+    private val SENT_IMAGES_KEY = "SentImages"
 
+    private lateinit var locationManager: LocationManager
     private lateinit var takePhotoButton: Button
     private lateinit var sendEmailButton: Button
     private lateinit var imageView: ImageView
@@ -79,8 +81,13 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in $cityName"
                 //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
                 sendEmail(uri, message)
+                addImageToSentList(uri.toString())
+                Toast.makeText(this, "Photo taken successfully", Toast.LENGTH_SHORT).show()
+                logSentImages() // Log delle immagini inviate
             } ?: Toast.makeText(this, "No photo to send", Toast.LENGTH_SHORT).show()
         }
+        // Log delle immagini inviate durante la creazione dell'attività
+        logSentImages()
     }
 
     private fun getLocationAndStartCamera() {
@@ -326,6 +333,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
+            Log.d("MainActivity", "Email sent with photo URI: $photoUri")
         }
     }
 
@@ -343,5 +351,28 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private fun getLongitudeFromUri(uri: Uri): Double {
         val exifInterface = androidx.exifinterface.media.ExifInterface(uri.path!!)
         return exifInterface.latLong?.get(1) ?: 0.0
+    }
+
+    private fun addImageToSentList(imageUri: String) {
+        val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+
+        val existingImages = sharedPreferences.getStringSet(SENT_IMAGES_KEY, mutableSetOf())
+        existingImages?.add(imageUri)
+
+        editor.putStringSet(SENT_IMAGES_KEY, existingImages)
+        editor.apply()
+    }
+
+    private fun getSentImagesList(): Set<String> {
+        val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
+        return sharedPreferences.getStringSet(SENT_IMAGES_KEY, mutableSetOf()) ?: mutableSetOf()
+    }
+
+    private fun logSentImages() {
+        val sentImages = getSentImagesList()
+        for (imageUri in sentImages) {
+            Log.d("MainActivity", "Sent Image URI: $imageUri")
+        }
     }
 }
