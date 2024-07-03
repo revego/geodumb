@@ -23,12 +23,15 @@ import java.util.Date
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import androidx.exifinterface.media.ExifInterface
 import com.google.android.gms.location.LocationServices
+import java.io.FileOutputStream
 import java.util.Locale
 
 class MainActivity : AppCompatActivity(), LocationListener {
@@ -221,6 +224,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             photoUri?.let { uri ->
+                val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
+                val resizedBitmap = resizeBitmap(bitmap, 800, 800) // Resize to 800x800 or any other size
+                val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
+                imageView.setImageURI(Uri.fromFile(compressedFile))
                 imageView.setImageURI(uri)
                 val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
                 Log.d("MainActivity", message)
@@ -230,6 +237,29 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 }
             }
         }
+    }
+
+    private fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        val scaleWidth = maxWidth.toFloat() / width
+        val scaleHeight = maxHeight.toFloat() / height
+        val scale = Math.min(scaleWidth, scaleHeight)
+
+        val matrix = android.graphics.Matrix()
+        matrix.postScale(scale, scale)
+
+        return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true)
+    }
+
+    private fun compressBitmap(bitmap: Bitmap, filePath: String): File {
+        val file = File(filePath)
+        val fos = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, fos) // Adjust quality as needed
+        fos.flush()
+        fos.close()
+        return file
     }
 
     @SuppressLint("MissingPermission")
