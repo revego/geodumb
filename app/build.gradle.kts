@@ -54,4 +54,5 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.7.0")
     implementation("com.google.android.gms:play-services-location:19.0.1")
+    implementation(libs.play.services.maps.vlatestversion)
 }

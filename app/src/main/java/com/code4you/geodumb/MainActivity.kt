@@ -66,7 +66,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         takePhotoButton.setOnClickListener {
             Log.d("MainActivity", "Take Photo button clicked")
             if (checkPermissions()) {
-                //getLocationAndStartCamera()
                 takePhoto()
             } else {
                 requestPermissions()
@@ -229,6 +228,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             photoUri?.let { uri ->
                 val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
@@ -328,9 +328,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
             type = "image/jpeg"
             putExtra(Intent.EXTRA_EMAIL, arrayOf("info@citylog.cloud"))
             putExtra(Intent.EXTRA_SUBJECT, "report")
-            putExtra(Intent.EXTRA_TEXT, message)
+            //putExtra(Intent.EXTRA_TEXT, message)
             putExtra(Intent.EXTRA_STREAM, photoUri)
+
+            // Aggiungi il messaggio principale con le coordinate e il nome della città
+            val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}"
+            // Aggiungi un'immagine statica della mappa basata sulle coordinate da OpenStreetMap Static Maps
+            val mapUrl = "Map description:  https://static-maps.yandex.ru/1.x/?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
+
+            putExtra(Intent.EXTRA_TEXT, "\n\nDescption audit:\n$message\n\n$mapUrl")
         }
+
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
             Log.d("MainActivity", "Email sent with photo URI: $photoUri")
@@ -374,5 +382,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         for (imageUri in sentImages) {
             Log.d("MainActivity", "Sent Image URI: $imageUri")
         }
+    }
+
+    // Funzione per ottenere l'indirizzo completo utilizzando le coordinate
+    private fun getAddress(latitude: Double, longitude: Double): String {
+        val geoCoder = Geocoder(this, Locale.getDefault())
+        val addresses = geoCoder.getFromLocation(latitude, longitude, 1)
+        return addresses?.get(0)?.getAddressLine(0) ?: "Address not available"
     }
 }
