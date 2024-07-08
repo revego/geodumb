@@ -5,7 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    android:background="@color/colorPrimary"
     tools:context=".MainActivity">
 
     <!-- Titolo -->
@@ -14,13 +13,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="GeoDumb"
+        android:textColor="@color/black"
         android:textSize="24sp"
-        android:textColor="@color/white"
-        android:layout_marginBottom="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5" />
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Missione -->
     <TextView
@@ -29,7 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="App civica per geolocalizzare e condividere il disagio/degrado."
-        android:textColor="@color/white"
+        android:textColor="@color/black"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -57,9 +55,8 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:text="Take Photo"
-        app:layout_constraintBottom_toTopOf="@+id/btn_send_email"
+        app:layout_constraintBottom_toTopOf="@id/btn_send_email"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Bottone per inviare email -->
@@ -67,10 +64,10 @@
         android:id="@+id/btn_send_email"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
         android:text="Send Email"
-        app:layout_constraintBottom_toTopOf="@+id/txt_disclaimer"
+        app:layout_constraintBottom_toTopOf="@id/txt_disclaimer"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Disclaimer -->
@@ -78,14 +75,14 @@
         android:id="@+id/txt_disclaimer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
         android:text="This app is not responsible for any accidental issues."
+        android:textColor="@color/black"
         android:textSize="12sp"
-        android:textColor="@color/white"
-        android:layout_marginTop="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/txt_copyright"
+        app:layout_constraintBottom_toTopOf="@id/txt_copyright"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintHorizontal_bias="0.5" />
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Copyright -->
     <TextView
@@ -93,12 +90,37 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="© 2024 GeoDumb"
+        android:textColor="@color/black"
         android:textSize="12sp"
-        android:textColor="@color/white"
-        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/title_text"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!--FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navigation"/-->
+
+    <!-- Bottom Navigation View -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:menu="@menu/bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintHorizontal_bias="0.5" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
