@@ -1,9 +1,20 @@
 package com.code4you.geodumb
 
+//import MapsActivity
+
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.location.Geocoder
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -16,23 +27,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.exifinterface.media.ExifInterface
+import com.code4you.geodumb.databinding.ActivityMainBinding
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
-
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.location.Geocoder
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
-import androidx.exifinterface.media.ExifInterface
-import com.google.android.gms.location.LocationServices
-import java.io.FileOutputStream
 import java.util.Locale
+
 
 class MainActivity : AppCompatActivity(), LocationListener {
 
@@ -41,6 +47,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private val SENT_IMAGES_PREF = "SentImagesPref"
     private val SENT_IMAGES_KEY = "SentImages"
 
+    private val STATIC_LOCATION = LatLng(37.7749, -122.4194) // San Francisco
+
+    private lateinit var binding: ActivityMainBinding
     private lateinit var locationManager: LocationManager
     private lateinit var takePhotoButton: Button
     private lateinit var sendEmailButton: Button
@@ -48,9 +57,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private var photoUri: Uri? = null
 
     companion object {
+        private const val STATIC_LOCATION = 3
         private const val REQUEST_PERMISSIONS = 2
         private const val REQUEST_IMAGE_CAPTURE = 1
-        private const val REQUEST_CAMERA_PERMISSION = 100
+        //private const val REQUEST_CAMERA_PERMISSION = 100
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +79,30 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 takePhoto()
             } else {
                 requestPermissions()
+            }
+        }
+        val navView: BottomNavigationView = findViewById(R.id.bottom_navigation)
+        navView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.navigation_home -> {
+                    // Handle Home navigation
+                    true
+                }
+                R.id.navigation_dashboard -> {
+                    // Handle Dashboard navigation
+                    true
+                }
+                R.id.navigation_maps -> {
+                    Log.d(TAG, "Map selected")
+                    try {
+                        val intent = Intent(this, MapsActivity::class.java)
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error starting MapsActivity", e)
+                    }
+                    true
+                }
+                else -> false
             }
         }
 
