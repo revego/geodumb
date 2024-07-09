@@ -1,6 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
+}
+
+buildscript {
+    dependencies {
+        classpath("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1")
+    }
 }
 
 android {
@@ -56,5 +63,8 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.material.v130)
     implementation(libs.androidx.constraintlayout.v204)
+    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation(libs.play.services.location.v2101)
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
 
 }

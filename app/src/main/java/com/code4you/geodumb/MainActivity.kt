@@ -1,6 +1,7 @@
 package com.code4you.geodumb
 
 //import MapsActivity
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -27,7 +28,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
-import androidx.fragment.app.Fragment
+import com.code4you.geodumb.databinding.ActivityMainBinding
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -38,6 +39,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
 class MainActivity : AppCompatActivity(), LocationListener {
 
     private var latitude: Double? = null
@@ -47,7 +49,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private val STATIC_LOCATION = LatLng(37.7749, -122.4194) // San Francisco
 
-
+    private lateinit var binding: ActivityMainBinding
     private lateinit var locationManager: LocationManager
     private lateinit var takePhotoButton: Button
     private lateinit var sendEmailButton: Button
@@ -84,8 +86,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
             when (item.itemId) {
                 R.id.navigation_home -> {
                     // Handle Home navigation
-                    val fragment = FirstFragment()
-                    openFragment(fragment)
                     true
                 }
                 R.id.navigation_dashboard -> {
@@ -121,13 +121,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         // Log delle immagini inviate durante la creazione dell'attività
         logSentImages()
-    }
-
-    private fun openFragment(fragment: Fragment) {
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.action_FirstFragment_to_SecondFragment, fragment)
-        transaction.addToBackStack(null)
-        transaction.commit()
     }
 
     private fun getLocationAndStartCamera() {
