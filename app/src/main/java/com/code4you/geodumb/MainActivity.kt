@@ -32,6 +32,8 @@ import com.code4you.geodumb.databinding.ActivityMainBinding
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -72,10 +74,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
         imageView = findViewById(R.id.img_photo)
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
         takePhotoButton.setOnClickListener {
             Log.d("MainActivity", "Take Photo button clicked")
             if (checkPermissions()) {
+                getLastKnownLocation()
                 takePhoto()
             } else {
                 requestPermissions()
@@ -90,6 +92,13 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 }
                 R.id.navigation_dashboard -> {
                     // Handle Dashboard navigation
+                    Log.d(TAG, "Map selected")
+                    try {
+                        val intent = Intent(this, PhotoDetailActivity::class.java)
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error starting PhotoDetailActivity", e)
+                    }
                     true
                 }
                 R.id.navigation_maps -> {
@@ -106,21 +115,32 @@ class MainActivity : AppCompatActivity(), LocationListener {
             }
         }
 
-        sendEmailButton.setOnClickListener {
-            photoUri?.let { uri ->
-                val latitude = getLatitudeFromUri(uri)
-                val longitude = getLongitudeFromUri(uri)
-                val cityName = getCityName(latitude, longitude)
-                val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in $cityName"
-                //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
-                sendEmail(uri, message)
-                addImageToSentList(uri.toString())
-                Toast.makeText(this, "Photo taken successfully", Toast.LENGTH_SHORT).show()
-                logSentImages() // Log delle immagini inviate
-            } ?: Toast.makeText(this, "No photo to send", Toast.LENGTH_SHORT).show()
-        }
+        //sendEmailButton.setOnClickListener {
+        //    photoUri?.let { uri ->
+        //        val latitude = getLatitudeFromUri(uri)
+        //        val longitude = getLongitudeFromUri(uri)
+        //        val cityName = getCityName(latitude, longitude)
+        //        val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in $cityName"
+        //        //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+        //        sendEmail(uri, message)
+        //        addImageToSentList(uri.toString())
+        //        Toast.makeText(this, "Photo taken successfully", Toast.LENGTH_SHORT).show()
+        //        logSentImages() // Log delle immagini inviate
+        //    } ?: Toast.makeText(this, "No photo to send", Toast.LENGTH_SHORT).show()
+        //}
         // Log delle immagini inviate durante la creazione dell'attività
-        logSentImages()
+        //logSentImages()
+        ImageLogger.logSentImages(this)
+    }
+
+    private fun getLastKnownLocation() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
+            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            latitude = location?.latitude
+            longitude = location?.longitude
+        }
     }
 
     private fun getLocationAndStartCamera() {
@@ -236,8 +256,40 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     @Throws(IOException::class)
     private fun createImageFile(): File {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+
+        // Ottieni i dati di geolocalizzazione
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
+        }
+        val location: Location? = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+        val latitude = location?.latitude ?: 0.0
+        val longitude = location?.longitude ?: 0.0
+
+        // Ottieni l'indirizzo e la città usando Geocoder
+        val geoCoder = Geocoder(this, Locale.getDefault())
+        val addresses = geoCoder.getFromLocation(latitude, longitude, 1)
+        val address = addresses?.get(0)?.getAddressLine(0) ?: "Unknown_Address"
+        val city = addresses?.get(0)?.locality ?: "Unknown_City"
+
+        // Pulisci l'indirizzo e la città per usarli nel nome del file
+        val cleanAddress = address.replace("\\s+".toRegex(), "_").replace("[^a-zA-Z0-9_]".toRegex(), "")
+        val cleanCity = city.replace("\\s+".toRegex(), "_").replace("[^a-zA-Z0-9_]".toRegex(), "")
+
+        val fileName = "JPEG_${timeStamp}_${cleanCity}_${cleanAddress}_${latitude}_${longitude}.jpg"
+
+        return File(storageDir, fileName).apply {
+            currentPhotoPath = absolutePath
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun createImageFile_(): File {
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+
         return File.createTempFile(
             "JPEG_${timeStamp}_",
             ".jpg",
@@ -360,14 +412,22 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private fun sendEmail(photoUri: Uri, message: String) {
         val emailIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
-            putExtra(Intent.EXTRA_EMAIL, arrayOf("info@citylog.cloud"))
-            putExtra(Intent.EXTRA_SUBJECT, "report")
+            putExtra(Intent.EXTRA_EMAIL, arrayOf("relokk@yahoo.com"))
+            putExtra(Intent.EXTRA_SUBJECT, "Report from GeoDumb")
             //putExtra(Intent.EXTRA_TEXT, message)
             putExtra(Intent.EXTRA_STREAM, photoUri)
 
             // Aggiungi il messaggio principale con le coordinate e il nome della città
-            val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}"
+            val address = latitude?.let { lat ->
+                longitude?.let { lon ->
+                    getAddress(lat, lon)
+                }
+            } ?: "Address not available"
+
+            val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)} at $address"
             // Aggiungi un'immagine statica della mappa basata sulle coordinate da OpenStreetMap Static Maps
+            // Personal server openstreetmap
+            //val mapUrl = "https://maps.citylog.cloud/hot/0/0/0.png?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
             val mapUrl = "Map description:  https://static-maps.yandex.ru/1.x/?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
 
             putExtra(Intent.EXTRA_TEXT, "\n\nDescption audit:\n$message\n\n$mapUrl")
@@ -376,6 +436,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
             Log.d("MainActivity", "Email sent with photo URI: $photoUri")
+
+            // log Images
+            addImageToSentList(photoUri.toString())
+            ImageLogger.logSentImages(this)
+            //logSentImages()
         }
     }
 
@@ -395,7 +460,23 @@ class MainActivity : AppCompatActivity(), LocationListener {
         return exifInterface.latLong?.get(1) ?: 0.0
     }
 
-    private fun addImageToSentList(imageUri: String) {
+    private fun addImageToSentList(imagePath: String) {
+        val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+
+        val existingImages = sharedPreferences.getString(SENT_IMAGES_KEY, null)
+        val imagesList: MutableList<String> = if (existingImages != null) {
+            Gson().fromJson(existingImages, object : TypeToken<MutableList<String>>() {}.type)
+        } else {
+            mutableListOf()
+        }
+
+        imagesList.add(imagePath)
+        editor.putString(SENT_IMAGES_KEY, Gson().toJson(imagesList))
+        editor.apply()
+    }
+
+    private fun addImageToSentList_(imageUri: String) {
         val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
 
@@ -406,15 +487,27 @@ class MainActivity : AppCompatActivity(), LocationListener {
         editor.apply()
     }
 
+    private fun getSentImages(): List<String> {
+        val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
+        val existingImages = sharedPreferences.getString(SENT_IMAGES_KEY, null)
+        return if (existingImages != null) {
+            Gson().fromJson(existingImages, object : TypeToken<List<String>>() {}.type)
+        } else {
+            listOf()
+        }
+    }
+
     private fun getSentImagesList(): Set<String> {
         val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
         return sharedPreferences.getStringSet(SENT_IMAGES_KEY, mutableSetOf()) ?: mutableSetOf()
     }
 
     private fun logSentImages() {
-        val sentImages = getSentImagesList()
+        //val sentImages = getSentImagesList()
+        val sentImages = getSentImages()
         for (imageUri in sentImages) {
             Log.d("MainActivity", "Sent Image URI: $imageUri")
+            Toast.makeText(this, "Sent Image URI", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -56,6 +56,9 @@ dependencies {
     implementation(libs.play.services.maps)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.fragment)
+    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -66,5 +69,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
     implementation(libs.play.services.location.v2101)
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+
+    implementation("com.google.code.gson:gson:2.8.6")
+
+    implementation("com.github.bumptech.glide:glide:4.12.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
 
 }
