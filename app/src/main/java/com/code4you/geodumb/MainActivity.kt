@@ -40,6 +40,8 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
+import kotlin.math.*
 
 
 class MainActivity : AppCompatActivity(), LocationListener {
@@ -87,7 +89,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         navView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_home -> {
-                    // Handle Home navigation
+                    // Avvia la DescriptionActivity quando viene selezionato "Home"
+                    val intent = Intent(
+                        this, DescriptionActivity::class.java
+                    )
+                    startActivity(intent)
+                    //Toast.makeText(this, "GeoDumb: Gestisci e visualizza segnalazioni geografiche con immagini", Toast.LENGTH_SHORT).show();
                     true
                 }
                 R.id.navigation_dashboard -> {
@@ -412,7 +419,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private fun sendEmail(photoUri: Uri, message: String) {
         val emailIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
-            putExtra(Intent.EXTRA_EMAIL, arrayOf("relokk@yahoo.com"))
+            putExtra(Intent.EXTRA_EMAIL, arrayOf("report@citylog.cloud"))
             putExtra(Intent.EXTRA_SUBJECT, "Report from GeoDumb")
             //putExtra(Intent.EXTRA_TEXT, message)
             putExtra(Intent.EXTRA_STREAM, photoUri)
@@ -424,13 +431,69 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 }
             } ?: "Address not available"
 
-            val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)} at $address"
+            // Ottieni la data e l'ora correnti
+            val currentDateTime =
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+            // Generazione unico ID
+            val uniqueID = UUID.randomUUID().toString()
+            // vecchio messaggio
+            val message2 = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)} at $address"
             // Aggiungi un'immagine statica della mappa basata sulle coordinate da OpenStreetMap Static Maps
-            // Personal server openstreetmap
-            //val mapUrl = "https://maps.citylog.cloud/hot/0/0/0.png?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
-            val mapUrl = "Map description:  https://static-maps.yandex.ru/1.x/?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
+            // Now i use a personal server openstreetmap
+            val (x, y) = latLonToTile(latitude, longitude, 15)
+            val mapUrl = "https://maps.citylog.cloud/hot/15/$x/$y.png?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
+            //val mapUrl = "Map description:  https://static-maps.yandex.ru/1.x/?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
+            val message = """
+            **Description Audit:**
+            Here is the photo taken at the following location:
+                
+            - **ImageID:** $uniqueID
+            - **Coordinates:**
+              - Latitude: $latitude
+              - Longitude: $longitude
 
-            putExtra(Intent.EXTRA_TEXT, "\n\nDescption audit:\n$message\n\n$mapUrl")
+            - **City:** ${getCityName(latitude, longitude)}
+            - **Address:** $address
+            - **DateTime:** $currentDateTime 
+
+            **Map Citylog Preview:** 
+            $mapUrl
+            
+            - **Warning Transmission Image:**
+              - ImageID: $uniqueID
+              - FocusImage:
+            """.  trimIndent()
+
+            // Creazione del messaggio formattato in HTML
+            val formattedMessage = """
+            <html>
+            <body>
+            <p><strong>Description Audit:</strong></p>
+            <p>Here is the photo taken at the following location:</p>
+            <ul>
+                <li><strong>ImageID:</strong> $uniqueID</li>
+                <li><strong>Coordinates:</strong>
+                    <ul>
+                        <li>Latitude: $latitude</li>
+                        <li>Longitude: $longitude</li>
+                    </ul>
+                </li>
+                <li><strong>City:</strong> ${getCityName(latitude, longitude)}</li>
+                <li><strong>Address:</strong> $address</li>
+                <li><strong>DateTime:</strong> $currentDateTime</li>
+            </ul>
+            <p><strong>Map Citylog Preview:</strong></p>
+            <p><a href="$mapUrl">View Map</a></p>
+            </body>
+            </html>
+            """.trimIndent()
+
+            // Invia l'email con il messaggio HTML
+            //putExtra(Intent.EXTRA_TEXT, Html.fromHtml(formattedMessage))
+            //putExtra(Intent.EXTRA_STREAM, mapUrl)
+
+            putExtra(Intent.EXTRA_TEXT, "\n$message")
+            //putExtra(Intent.EXTRA_TEXT, "\n$message\n\n$mapUrl")
         }
 
         if (emailIntent.resolveActivity(packageManager) != null) {
@@ -442,6 +505,13 @@ class MainActivity : AppCompatActivity(), LocationListener {
             ImageLogger.logSentImages(this)
             //logSentImages()
         }
+    }
+
+    private fun latLonToTile(lat: Double?, lon: Double?, zoom: Int): Pair<Int, Int> {
+        if (lat == null || lon == null) return Pair(0,0)
+        val x = Math.floor((lon + 180) / 360 * Math.pow(2.0, zoom.toDouble())).toInt()
+        val y = Math.floor((1 - Math.log(Math.tan(Math.toRadians(lat)) + 1 / Math.cos(Math.toRadians(lat))) / Math.PI) / 2 * Math.pow(2.0, zoom.toDouble())).toInt()
+        return Pair(x, y)
     }
 
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}

@@ -1,8 +1,11 @@
 package com.code4you.geodumb
 
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -10,7 +13,7 @@ import com.bumptech.glide.Glide
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class SentImagesAdapter(private val sentImages: List<String>) : RecyclerView.Adapter<SentImagesAdapter.ViewHolder>() {
+class SentImagesAdapter(private val sentImages: MutableList<String>) : RecyclerView.Adapter<SentImagesAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
@@ -25,9 +28,35 @@ class SentImagesAdapter(private val sentImages: List<String>) : RecyclerView.Ada
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val imagePath = sentImages[position]
+
+        // Assegna l'URL di test
+        val testUrl = "https://example.com/test_image/${position}"
+
+        // URL fittizio per la mappa (utilizzo di una stringa basata sull'indice come parametro)
+        val mapUrl = "https://example.com/map?location=${position},${position}"
+
         Glide.with(holder.itemView.context).load(imagePath).into(holder.imageView)
         holder.textViewDate.text = "Date: " + getDateFromImagePath(imagePath)
         holder.textViewEmail.text = "Address: " + getEmailFromImagePath(imagePath)
+
+        // Imposta il click listener per aprire l'URL
+        holder.itemView.setOnClickListener {
+            val context = holder.itemView.context
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(testUrl))
+            context.startActivity(intent)
+        }
+
+        // Pulsante per rimuovere l'immagine (assumendo che ci sia un pulsante con id deleteButton)
+        holder.itemView.findViewById<Button>(R.id.deleteButton).setOnClickListener {
+            removeItem(position)
+        }
+
+        // Listener per il pulsante "Map" che apre l'URL della mappa
+        holder.itemView.findViewById<Button>(R.id.mapButton).setOnClickListener {
+            val context = holder.itemView.context
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(mapUrl))
+            context.startActivity(intent)
+        }
     }
 
     override fun getItemCount(): Int {
@@ -71,4 +100,10 @@ class SentImagesAdapter(private val sentImages: List<String>) : RecyclerView.Ada
             "Email non disponibile"
         }
     }
+
+    fun removeItem(position: Int) {
+        sentImages.removeAt(position)
+        notifyItemRemoved(position)
+    }
+
 }

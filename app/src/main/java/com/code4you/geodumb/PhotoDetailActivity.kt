@@ -42,7 +42,7 @@ class PhotoDetailActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         // Richiamare il metodo logSentImages di ImageLogger
-        val sentImages = ImageLogger.getSentImages(this).sortedDescending()
+        val sentImages = ImageLogger.getSentImages(this).sortedDescending().toMutableList()
 
         // Popolare il RecyclerView con i dati delle immagini inviate
         val adapter = SentImagesAdapter(sentImages)

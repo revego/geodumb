@@ -44,6 +44,9 @@
             android:name=".MapsActivity"
             android:exported="false" />
         <activity
+            android:name=".DescriptionActivity"
+            android:exported="false" />
+        <activity
             android:name=".PhotoDetailActivity"
             android:exported="false" />
         <activity
