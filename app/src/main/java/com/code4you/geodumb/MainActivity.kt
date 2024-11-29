@@ -29,6 +29,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import com.code4you.geodumb.databinding.ActivityMainBinding
+import com.facebook.AccessToken
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -42,7 +43,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.*
-
 
 class MainActivity : AppCompatActivity(), LocationListener {
 
@@ -71,6 +71,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Verifica se l'utente è già autenticato
+        if (AccessToken.getCurrentAccessToken() == null) {
+            // Utente non autenticato, reindirizzalo alla LoginActivity
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish() // Chiudi la MainActivity finché l'utente non è autenticato
+        }
         takePhotoButton = findViewById(R.id.btn_take_photo)
         sendEmailButton = findViewById(R.id.btn_send_email)
         imageView = findViewById(R.id.img_photo)
