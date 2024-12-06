@@ -20,6 +20,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
@@ -30,6 +32,7 @@ import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import com.code4you.geodumb.databinding.ActivityMainBinding
 import com.facebook.AccessToken
+import com.facebook.login.LoginManager
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -43,6 +46,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.*
+import androidx.appcompat.widget.Toolbar
 
 class MainActivity : AppCompatActivity(), LocationListener {
 
@@ -70,6 +74,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Imposta il Toolbar come ActionBar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         // Verifica se l'utente è già autenticato
         if (AccessToken.getCurrentAccessToken() == null) {
@@ -145,6 +153,34 @@ class MainActivity : AppCompatActivity(), LocationListener {
         //logSentImages()
         ImageLogger.logSentImages(this)
     }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_logout -> {
+                // Effettua il logout da Facebook
+                logoutFacebook()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun logoutFacebook() {
+        // Logout da Facebook
+        LoginManager.getInstance().logOut()
+        Log.d("FacebookLogin", "Utente disconnesso")
+
+        // Torna alla LoginActivity
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish() // Chiudi la MainActivity
+    }
+
 
     private fun getLastKnownLocation() {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||

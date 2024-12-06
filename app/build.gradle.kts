@@ -62,7 +62,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation("com.facebook.android:facebook-login:[12.3.0]")
+    implementation("com.facebook.android:facebook-login:[17.0.2]")
 
     implementation(libs.play.services.location)
     implementation(libs.material.v130)
