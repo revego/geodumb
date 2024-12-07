@@ -38,7 +38,7 @@ class PhotoDetailActivity : AppCompatActivity() {
         //textViewDate.text = date
 
         // Configurare il RecyclerView
-        val recyclerView: RecyclerView = findViewById(R.id.recyclerViewSentImages)
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         // Richiamare il metodo logSentImages di ImageLogger

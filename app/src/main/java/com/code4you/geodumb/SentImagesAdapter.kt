@@ -104,6 +104,11 @@ class SentImagesAdapter(private val sentImages: MutableList<String>) : RecyclerV
     fun removeItem(position: Int) {
         sentImages.removeAt(position)
         notifyItemRemoved(position)
+        notifyItemRangeChanged(position, sentImages.size - position)
     }
 
+    fun removeItem_(position: Int) {
+        sentImages.removeAt(position)
+        notifyItemRemoved(position)
+    }
 }
