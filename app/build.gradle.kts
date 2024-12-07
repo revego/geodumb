@@ -63,6 +63,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("com.facebook.android:facebook-login:[17.0.2]")
+    implementation("com.facebook.android:facebook-android-sdk:[17.0.2]")
+    implementation("com.squareup.picasso:picasso:2.8")
+    //implementation("com.makeramen:roundedimageview:2.3.0")
+    implementation("com.google.android.material:material:1.8.0")  // o una versione più recente
 
     implementation(libs.play.services.location)
     implementation(libs.material.v130)

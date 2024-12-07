@@ -26,18 +26,21 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import com.code4you.geodumb.databinding.ActivityMainBinding
 import com.facebook.AccessToken
+import com.facebook.GraphRequest
 import com.facebook.login.LoginManager
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.squareup.picasso.Picasso
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -46,7 +49,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.*
-import androidx.appcompat.widget.Toolbar
+import android.widget.TextView
+
 
 class MainActivity : AppCompatActivity(), LocationListener {
 
@@ -78,6 +82,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
         // Imposta il Toolbar come ActionBar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+
+        // Mostra l'immagine del profilo utente se connesso
+        showFacebookProfilePicture()
 
         // Verifica se l'utente è già autenticato
         if (AccessToken.getCurrentAccessToken() == null) {
@@ -628,5 +635,55 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val geoCoder = Geocoder(this, Locale.getDefault())
         val addresses = geoCoder.getFromLocation(latitude, longitude, 1)
         return addresses?.get(0)?.getAddressLine(0) ?: "Address not available"
+    }
+
+    private fun showFacebookProfilePicture() {
+        val accessToken = AccessToken.getCurrentAccessToken()
+        if (accessToken != null && !accessToken.isExpired) {
+            val request = GraphRequest.newMeRequest(
+                accessToken
+            ) { jsonObject, _ ->
+                if (jsonObject != null) {
+                    // Recupera il nome utente e l'URL dell'immagine
+                    val name = jsonObject.optString("name", "User")
+                    val pictureData = jsonObject.optJSONObject("picture")?.optJSONObject("data")
+                    val imageUrl = pictureData?.optString("url") ?: "default_image_url"
+
+                    // Aggiorna UI
+                    val imageView = findViewById<ImageView>(R.id.img_account)
+                    val textView = findViewById<TextView>(R.id.txt_username)
+
+                    Picasso.get()
+                        .load(imageUrl)
+                        .error(R.drawable.account_generic)
+                        .into(imageView)
+
+                    textView.text = name
+                }
+            }
+
+            // Specifica i campi da ottenere
+            val parameters = Bundle()
+            parameters.putString("fields", "id,name,picture.type(large)")
+            request.parameters = parameters
+            request.executeAsync()
+        }
+    }
+
+    private fun showFacebookProfilePicture_() {
+        val accessToken = AccessToken.getCurrentAccessToken()
+        if (accessToken != null && !accessToken.isExpired) {
+            val userId = accessToken.userId
+            val profileImageUrl = "https://graph.facebook.com/$userId/picture?type=large"
+            Log.d("Facebook", "User ID: ${accessToken.userId}")
+
+            val imageUrl = "https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122125786802528933&height=200&width=200&ext=1736176184&hash=AbZW6Wlgz0NcAKKeizcr_9t7"
+            val imageView = findViewById<ImageView>(R.id.img_account) // Assicurati che l'ID corrisponda
+            //Picasso.get().load(profileImageUrl).into(imageView)
+            Picasso.get()
+                .load(imageUrl)
+                .error(R.drawable.account_generic  ) // Immagine di errore se fallisce
+                .into(imageView)
+        }
     }
 }

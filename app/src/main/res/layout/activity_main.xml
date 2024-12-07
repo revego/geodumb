@@ -21,20 +21,42 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
-    </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Titolo -->
+    </com.google.android.material.appbar.AppBarLayout>
+    <!-- Immagine Account sotto la Toolbar -->
+    <!--ImageView
+        android:id="@+id/img_account"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/user_profile_picture"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="MissingConstraints" /-->
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/img_account"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/user_profile_picture"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:shapeAppearanceOverlay="@style/CircularShape"
+        tools:ignore="MissingConstraints" />
+
     <TextView
-        android:id="@+id/title_text"
+        android:id="@+id/txt_username"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="GeoDumb"
-        android:textColor="@color/black"
-        android:textSize="24sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        android:layout_marginTop="8dp"
+        android:text="User Name"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/img_account"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appBarLayout" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Missione -->
     <TextView
@@ -42,13 +64,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="App civica per geolocalizzare e condividere il disagio/degrado."
+        android:text=""
         android:textColor="@color/black"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title_text" />
+        app:layout_constraintTop_toBottomOf="@id/img_account" />
 
     <!-- Immagine -->
     <ImageView
@@ -117,16 +139,10 @@
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/title_text"
+        app:layout_constraintTop_toBottomOf="@id/img_account"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-    <!--FrameLayout
-        android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/bottom_navigation"/-->
 
     <!-- Bottom Navigation View -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
