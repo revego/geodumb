@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
+    //alias(libs.plugins.kotlin.kapt)// Aggiungi questa riga
+    id("org.jetbrains.kotlin.kapt")
+    //kotlin("kapt") version "1.9.20"
 }
 
 buildscript {
@@ -44,7 +47,6 @@ android {
         viewBinding = true
     }
 }
-
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -66,12 +68,16 @@ dependencies {
     implementation("com.facebook.android:facebook-android-sdk:[17.0.2]")
     implementation("com.squareup.picasso:picasso:2.8")
     //implementation("com.makeramen:roundedimageview:2.3.0")
-    implementation("com.google.android.material:material:1.8.0")  // o una versione più recente
+    implementation(libs.material.v180)  // o una versione più recente
+
+    implementation(libs.androidx.room.runtime) // Usa l'ultima versione disponibile
+    //kapt("groupId:artifactId:version")
+    kapt(libs.androidx.room.compiler) // Per progetti Kotlin
 
     implementation(libs.play.services.location)
     implementation(libs.material.v130)
     implementation(libs.androidx.constraintlayout.v204)
-    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation(libs.play.services.location.v2101)
     implementation("com.google.android.gms:play-services-maps:19.0.0")
 

@@ -2,6 +2,7 @@
 agp = "8.5.0"
 constraintlayoutVersion = "2.0.4"
 googleMaterial = "<version>"
+googleMaterialVersion = "1.8.0"
 googlePlayServicesMaps = "18.0.2"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
@@ -28,6 +29,8 @@ roomKtx = "2.6.1"
 [libraries]
 androidx-constraintlayout-v204 = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayoutVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCommon" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomCommon" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -37,6 +40,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
 material-v130 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
+material-v180 = { module = "com.google.android.material:material", version.ref = "googleMaterialVersion" }
 material-vversion = { module = "com.google.android.material:material", version.ref = "googleMaterial" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 play-services-location-v2101 = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocationVersion" }
@@ -53,4 +57,5 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 google-android-libraries-mapsplatform-secrets-gradle-plugin = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "googleAndroidLibrariesMapsplatformSecretsGradlePlugin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version = "1.8.0" } # Specifica la tua versione di Kotlin
 
