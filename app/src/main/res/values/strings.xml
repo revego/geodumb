@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">geodumb</string>
+    <string name="app_name">CityLog</string>
     <string name="google_maps_key">AIzaSyB7uRdgKhPOnnvUeS8MsPOTrJZbigxVjA8</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
@@ -7,6 +7,10 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
+    <string name="facebook_app_id">1233024841238630</string>
+    <string name="fb_login_protocol_scheme">fb1233024841238630</string>
+    <string name="facebook_client_token">EAARhbfepSGYBO7W3ZBc0bQR2f2BZAbRdXbWjQPFDUzobZCohY0IbNCiTM8xfNbJiyskGHBNZB3lWZAjL2ZB3yMwLZAWSV6LbIWdDKvVJMtnq7MpTZAHz1iOwuevbK94aoOfq6pUPgpYfshJZApP9FuuqZAAEAB8saYJzrgthhOXYsWpS5OaITmWbjt6kzZB5ITLQ4ZAkrAZDZD</string>
+    <string name="user_profile_picture">Nome Utente</string>
 
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
