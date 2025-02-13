@@ -15,7 +15,31 @@
     <color name="colorOnError">#FFFFFF</color>
     <color name="colorError">#B00020</color>
 
+    <!-- Aggiungi altre colori Facebook -->
     <color name="facebook_blue">#1877F2</color>
     <color name="facebook_dark_blue">#166FE5</color>
     <color name="facebook_white">#FFFFFF</color>
+
+    <!-- Aggiungi altre colori Google -->
+    <color name="md_theme_primary">#006C4C</color>
+    <color name="md_theme_primaryContainer">#89F8C7</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_secondary">#4C6358</color>
+    <color name="md_theme_secondaryContainer">#CFE9DB</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_tertiary">#3D6374</color>
+    <color name="md_theme_tertiaryContainer">#C1E8FC</color>
+    <color name="md_theme_onTertiary">#FFFFFF</color>
+
+    <!-- Dark Theme Colors -->
+    <color name="md_theme_dark_primary">#6CDBA9</color>
+    <color name="md_theme_dark_primaryContainer">#005137</color>
+    <color name="md_theme_dark_onPrimary">#003827</color>
+    <color name="md_theme_dark_secondary">#B3CCBF</color>
+    <color name="md_theme_dark_secondaryContainer">#354B41</color>
+    <color name="md_theme_dark_onSecondary">#1F352A</color>
+    <color name="md_theme_dark_tertiary">#A5CCDF</color>
+    <color name="md_theme_dark_tertiaryContainer">#254B5C</color>
+    <color name="md_theme_dark_onTertiary">#0A3544</color>
+
 </resources>
