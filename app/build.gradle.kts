@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.cronet.embedded)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,6 +68,11 @@ dependencies {
     implementation("com.squareup.picasso:picasso:2.8")
     //implementation("com.makeramen:roundedimageview:2.3.0")
     implementation("com.google.android.material:material:1.8.0")  // o una versione più recente
+
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
 
     implementation(libs.play.services.location)
     implementation(libs.material.v130)

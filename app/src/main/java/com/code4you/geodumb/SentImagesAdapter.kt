@@ -2,6 +2,7 @@ package com.code4you.geodumb
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.code4you.geodumb.api.RetrofitClient
+import retrofit2.Callback
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -101,14 +104,34 @@ class SentImagesAdapter(private val sentImages: MutableList<String>) : RecyclerV
         }
     }
 
-    fun removeItem(position: Int) {
+    fun removeItem___(position: Int) {
         sentImages.removeAt(position)
         notifyItemRemoved(position)
         notifyItemRangeChanged(position, sentImages.size - position)
     }
 
-    fun removeItem_(position: Int) {
-        sentImages.removeAt(position)
-        notifyItemRemoved(position)
+    fun removeItem(position: Int) {
+
+        val imagePath = sentImages[position]
+
+        // Chiamata API per rimuovere l'immagine
+        RetrofitClient.apiService.deleteImage(imagePath).enqueue(object : Callback<Void> {
+            override fun onResponse(
+                call: retrofit2.Call<Void>,
+                response: retrofit2.Response<Void>
+            ) {
+                if (response.isSuccessful) {
+                    // Rimuovi l'immagine dalla lista e aggiorna il RecyclerView
+                    sentImages.removeAt(position)
+                    notifyItemRemoved(position)
+                    notifyItemRangeChanged(position, sentImages.size)
+                }
+            }
+
+            override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
+                // Gestisci errori
+                Log.e("SentImagesAdapter", "Errore nella rimozione dell'immagine: ${t.message}")
+            }
+        })
     }
 }
