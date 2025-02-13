@@ -14,4 +14,8 @@
     <color name="colorOnSurface">#000000</color>
     <color name="colorOnError">#FFFFFF</color>
     <color name="colorError">#B00020</color>
+
+    <color name="facebook_blue">#1877F2</color>
+    <color name="facebook_dark_blue">#166FE5</color>
+    <color name="facebook_white">#FFFFFF</color>
 </resources>
