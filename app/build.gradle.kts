@@ -12,14 +12,14 @@ buildscript {
 
 android {
     namespace = "com.code4you.geodumb"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.code4you.geodumb"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.cronet.embedded)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,6 +68,11 @@ dependencies {
     implementation("com.squareup.picasso:picasso:2.8")
     //implementation("com.makeramen:roundedimageview:2.3.0")
     implementation("com.google.android.material:material:1.8.0")  // o una versione più recente
+
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
 
     implementation(libs.play.services.location)
     implementation(libs.material.v130)

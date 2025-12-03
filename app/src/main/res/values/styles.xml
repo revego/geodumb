@@ -5,4 +5,20 @@
         <item name="cornerSize">50%</item> <!-- Imposta il raggio del cerchio -->
     </style>
 
+    <style name="Widget.GeoDumb.Button" parent="Widget.Material3.Button">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:padding">16dp</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+
+    <style name="Widget.GeoDumb.Button.OutlinedButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textAllCaps">false</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+
+    <style name="Widget.GeoDumb.CardView" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardElevation">4dp</item>
+        <item name="cardCornerRadius">12dp</item>
+    </style>
+
 </resources>
