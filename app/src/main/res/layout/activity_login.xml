@@ -1,23 +1,53 @@
-<!-- res/layout/activity_login.xml -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp">
+    android:padding="24dp"
+    android:background="@color/facebook_white">
 
+    <!-- Logo Facebook -->
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/ic_facebook_logo"
+        android:contentDescription="Facebook Logo"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Testo di Benvenuto -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Accedi con Facebook per continuare"
         android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/facebook_dark_blue"
         android:gravity="center"
         android:paddingBottom="20dp"/>
 
+    <!-- Pulsante di Login Facebook -->
     <com.facebook.login.widget.LoginButton
         android:id="@+id/facebook_login_button"
         android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <!-- Link alla Privacy Policy -->
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"/>
+        android:text="Leggi la nostra Privacy Policy"
+        android:textSize="14sp"
+        android:textColor="@color/facebook_blue"
+        android:paddingTop="20dp"
+        android:onClick="openPrivacyPolicy"/>
+
+    <!-- Link ai Termini di Servizio -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Termini di Servizio"
+        android:textSize="14sp"
+        android:textColor="@color/facebook_blue"
+        android:onClick="openTermsOfService"/>
 </LinearLayout>

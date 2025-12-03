@@ -1,8 +1,10 @@
 package com.code4you.geodumb
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.facebook.AccessToken
@@ -90,7 +92,6 @@ class LoginActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-
     private fun goToMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
@@ -101,6 +102,16 @@ class LoginActivity : AppCompatActivity() {
         val intent = Intent(this, LoginActivity::class.java)
         startActivity(intent)
         finish()  // Chiudi la MainActivity
+    }
+
+    fun openPrivacyPolicy(view: View) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://citylog.cloud/privacy"))
+        startActivity(intent)
+    }
+
+    fun openTermsOfService(view: View) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://citylog.cloud/termini"))
+        startActivity(intent)
     }
 }
 
