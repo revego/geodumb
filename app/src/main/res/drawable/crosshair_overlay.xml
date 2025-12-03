@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Cerchio esterno -->
+    <item>
+        <shape android:shape="oval">
+            <size android:width="256dp" android:height="256dp"/>
+            <stroke android:width="3dp" android:color="#44FFFFFF"/>
+            <solid android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+    <!-- Linea orizzontale -->
+    <item android:top="128dp" android:bottom="128dp">
+        <shape>
+            <solid android:color="#22FFFFFF"/>
+        </shape>
+    </item>
+    <!-- Linea verticale -->
+    <item android:left="128dp" android:right="128dp">
+        <shape>
+            <solid android:color="#22FFFFFF"/>
+        </shape>
+    </item>
+</layer-list>

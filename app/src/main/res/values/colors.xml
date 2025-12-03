@@ -77,4 +77,42 @@
     <color name="pastel_surface_dark">#2B3548</color>
     <color name="pastel_surface_variant_dark">#354259</color>
 
+    <!-- AMBER (esattamente come nel tuo React Native) -->
+    <color name="amber_50">#FFFBEB</color>
+    <color name="amber_100">#FEF3C7</color>
+    <color name="amber_200">#FDE68A</color>
+    <color name="amber_500">#F59E0B</color>
+    <color name="amber_600">#D97706</color>
+    <color name="amber_700">#B45309</color>
+    <color name="amber_800">#92400E</color>
+    <color name="amber_900">#78350F</color>
+
+    <!-- ORANGE -->
+    <color name="orange_50">#FFF7ED</color>
+    <color name="orange_100">#FFEDD5</color>
+    <color name="orange_600">#EA580C</color>
+
+    <!-- GRAY -->
+    <color name="gray_200">#E5E7EB</color>
+    <color name="gray_400">#9CA3AF</color>
+    <color name="gray_600">#4B5563</color>
+    <color name="gray_700">#374151</color>
+    <color name="gray_800">#1F2937</color>
+    <color name="gray_900">#111827</color>
+
+    <!-- GREEN -->
+    <color name="green_400">#86EFAC</color>
+    <color name="green_500">#22C55E</color>
+    <color name="green_600">#16A34A</color>
+
+    <!-- RED -->
+    <color name="red_500">#EF4444</color>
+    <color name="red_800">#991B1B</color>
+
+    <!-- BLUE -->
+    <color name="blue_600">#2563EB</color>
+
+    <!-- ALTRI USATI NEL LAYOUT -->
+    <color name="transparent">#00000000</color>
+
 </resources>
