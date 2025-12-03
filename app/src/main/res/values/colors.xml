@@ -42,4 +42,39 @@
     <color name="md_theme_dark_tertiaryContainer">#254B5C</color>
     <color name="md_theme_dark_onTertiary">#0A3544</color>
 
+    <!-- Light theme colors -->
+    <color name="pastel_gray_primary">#9BA4B5</color>
+    <color name="pastel_gray_primary_container">#DDE6ED</color>
+    <color name="pastel_on_primary">#FFFFFF</color>
+    <color name="pastel_on_primary_container">#394867</color>
+
+    <color name="pastel_gray_secondary">#B2B8C3</color>
+    <color name="pastel_gray_secondary_container">#E4E9F2</color>
+    <color name="pastel_on_secondary">#FFFFFF</color>
+    <color name="pastel_on_secondary_container">#4A5670</color>
+
+    <color name="pastel_gray_tertiary">#A5ADBD</color>
+    <color name="pastel_gray_tertiary_container">#DBE2EC</color>
+    <color name="pastel_on_tertiary">#FFFFFF</color>
+    <color name="pastel_on_tertiary_container">#435069</color>
+
+    <color name="pastel_background">#F8F9FA</color>
+    <color name="pastel_surface">#FFFFFF</color>
+    <color name="pastel_surface_variant">#F1F3F5</color>
+
+    <!-- Dark theme colors -->
+    <color name="pastel_gray_primary_dark">#4F5B74</color>
+    <color name="pastel_gray_primary_container_dark">#394867</color>
+    <color name="pastel_on_primary_dark">#FFFFFF</color>
+    <color name="pastel_on_primary_container_dark">#DDE6ED</color>
+
+    <color name="pastel_gray_secondary_dark">#5C6B89</color>
+    <color name="pastel_gray_secondary_container_dark">#435069</color>
+    <color name="pastel_on_secondary_dark">#FFFFFF</color>
+    <color name="pastel_on_secondary_container_dark">#E4E9F2</color>
+
+    <color name="pastel_background_dark">#212A3E</color>
+    <color name="pastel_surface_dark">#2B3548</color>
+    <color name="pastel_surface_variant_dark">#354259</color>
+
 </resources>

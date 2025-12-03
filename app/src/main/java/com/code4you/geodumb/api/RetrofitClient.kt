@@ -6,7 +6,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
 
     // Base URL del tuo server API
-    private const val BASE_URL = "https://api.citylog.cloud/"
+    private const val BASE_URL = "https://retrofit.citylog.cloud/"
+    //private const val BASE_URL = "https://api.citylog.cloud/"
 
     // Creiamo un'istanza di Retrofit
     private val retrofit: Retrofit by lazy {

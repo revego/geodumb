@@ -13,12 +13,13 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
+        android:background="?attr/colorSecondary"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@android:drawable/ic_menu_sort_by_size"
         app:popupTheme="@style/ThemeOverlay.Material3"
-        app:title="GeoDumb"
-        app:titleTextColor="@android:color/white" />
+        app:title="CityLog"
+        app:titleTextColor="@android:color/white"
+        tools:layout_editor_absoluteX="8dp" />
 
     <!-- User Profile Card -->
     <com.google.android.material.card.MaterialCardView
@@ -30,6 +31,7 @@
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:cardBackgroundColor="@color/pastel_on_secondary"
         app:layout_constraintTop_toBottomOf="@id/toolbar">
 
         <LinearLayout
@@ -37,7 +39,8 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:background="@color/pastel_on_secondary">
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/img_account"
@@ -71,7 +74,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/profile_card" />
 
-    <!-- Photo Card -->
+    <!-- Photo Card - Modified for vertical display -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_photo"
         android:layout_width="match_parent"
@@ -79,16 +82,28 @@
         android:layout_marginVertical="8dp"
         app:cardCornerRadius="4dp"
         app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/pastel_surface_variant"
+        app:layout_constraintTop_toBottomOf="@id/mission_text"
         app:layout_constraintBottom_toTopOf="@id/buttons_container"
-        app:layout_constraintTop_toBottomOf="@id/mission_text">
+        app:layout_constraintHeight_percent="0.4">
 
-        <ImageView
-            android:id="@+id/img_photo"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:adjustViewBounds="true"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_photo_placeholder" />
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/img_photo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"
+                android:background="@color/pastel_on_secondary"
+                android:scaleType="fitCenter"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Action Buttons Container -->
@@ -96,6 +111,7 @@
         android:id="@+id/buttons_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:layout_marginBottom="12dp"
         android:gravity="center"
         android:orientation="horizontal"
@@ -124,10 +140,11 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
+        android:background="?attr/colorSecondary"
         app:itemIconTint="@color/white"
         app:itemTextColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

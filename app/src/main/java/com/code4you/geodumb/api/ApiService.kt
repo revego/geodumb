@@ -5,8 +5,8 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 // L'interfaccia dell'API definisce le chiamate
@@ -23,8 +23,16 @@ interface ApiService {
     @POST("images")
     fun uploadImage(@Body image: Image): Call<Image>
 
-    @DELETE("images/{imagePath}")
-    fun deleteImage(@Path("imagePath") imagePath: String): Call<Void>
+    @DELETE("images")
+    fun deleteImage(
+        @Header("Authorization") authToken: String,  // Aggiunto il token OAuth
+        @Query("latitude") latitude: String,
+        @Query("longitude") longitude: String,
+        @Query("timestamp") timestamp: String
+    ): Call<Void>
+
+    //@DELETE("images/{imagePath}")
+    //fun deleteImage(@Path("imagePath") imagePath: String): Call<Void>
 
     // Esempio di richiesta DELETE per inviare dati di un'immagine
     //@DELETE("images/{id}")
