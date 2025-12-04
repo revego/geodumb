@@ -77,6 +77,7 @@
     <color name="pastel_surface_dark">#2B3548</color>
     <color name="pastel_surface_variant_dark">#354259</color>
 
+<<<<<<< HEAD
     <!-- AMBER (esattamente come nel tuo React Native) -->
     <color name="amber_50">#FFFBEB</color>
     <color name="amber_100">#FEF3C7</color>
@@ -114,5 +115,21 @@
 
     <!-- ALTRI USATI NEL LAYOUT -->
     <color name="transparent">#00000000</color>
+=======
+    <!-- AMBER (esatti come Tailwind / Material) -->
+    <color name="amber_600">#D97706</color>
+    <color name="amber_700">#B45309</color>
+    <color name="amber_800">#92400E</color>
+
+    <!-- GREEN (esatti come Tailwind / Material) -->
+    <color name="green_600">#16A34A</color>
+    <color name="green_700">#15803D</color>
+
+    <color name="grey_300">#E0E0E0</color>
+    <color name="grey_600">#757575</color>
+    <color name="grey_700">#616161</color>
+    <color name="grey_800">#424242</color>
+    <color name="blue_600">#1E88E5</color>
+>>>>>>> api-insert-remove-new-them
 
 </resources>
