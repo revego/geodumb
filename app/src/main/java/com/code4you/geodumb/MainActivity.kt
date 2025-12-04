@@ -24,6 +24,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -48,8 +49,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import kotlin.math.*
-import android.widget.TextView
 
 
 class MainActivity : AppCompatActivity(), LocationListener {
@@ -249,7 +248,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             photoFile?.also {
                 photoUri = FileProvider.getUriForFile(
                     this,
-                    "com.example.photoapp.provider", // Usa il tuo applicationId qui
+                    "com.code4you.geodumb.provider",
                     it
                 )
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
@@ -260,21 +259,14 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun checkPermissions(): Boolean {
         val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-        val writeStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        val readStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
         val locationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        return cameraPermission == PackageManager.PERMISSION_GRANTED &&
-                writeStoragePermission == PackageManager.PERMISSION_GRANTED &&
-                readStoragePermission == PackageManager.PERMISSION_GRANTED &&
-                locationPermission == PackageManager.PERMISSION_GRANTED
+        return cameraPermission == PackageManager.PERMISSION_GRANTED && locationPermission == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestPermissions() {
         ActivityCompat.requestPermissions(this,
             arrayOf(
                 Manifest.permission.CAMERA,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ),
             REQUEST_PERMISSIONS
@@ -326,9 +318,16 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         // Ottieni l'indirizzo e la città usando Geocoder
         val geoCoder = Geocoder(this, Locale.getDefault())
-        val addresses = geoCoder.getFromLocation(latitude, longitude, 1)
-        val address = addresses?.get(0)?.getAddressLine(0) ?: "Unknown_Address"
-        val city = addresses?.get(0)?.locality ?: "Unknown_City"
+        val addresses = try {
+            geoCoder.getFromLocation(latitude, longitude, 1)
+        } catch (e: IOException) {
+            Log.e("MainActivity", "Geocoder failed", e)
+            null
+        }
+
+        val foundAddress = addresses?.firstOrNull()
+        val address = foundAddress?.getAddressLine(0) ?: "Unknown_Address"
+        val city = foundAddress?.locality ?: "Unknown_City"
 
         // Pulisci l'indirizzo e la città per usarli nel nome del file
         val cleanAddress = address.replace("\\s+".toRegex(), "_").replace("[^a-zA-Z0-9_]".toRegex(), "")
@@ -358,7 +357,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_PERMISSIONS) {
-            if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+            if ((grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED })) {
                 takePhoto()
             } else {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
@@ -374,15 +373,19 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             photoUri?.let { uri ->
                 val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
-                val resizedBitmap = resizeBitmap(bitmap, 800, 800) // Resize to 800x800 or any other size
-                val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
-                imageView.setImageURI(Uri.fromFile(compressedFile))
-                imageView.setImageURI(uri)
-                val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
-                Log.d("MainActivity", message)
-                // Imposta il listener per il bottone sendEmailButton con il messaggio
-                sendEmailButton.setOnClickListener {
-                    sendEmail(uri, message)
+                if (bitmap != null) {
+                    val resizedBitmap = resizeBitmap(bitmap, 800, 800) // Resize to 800x800 or any other size
+                    val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
+                    imageView.setImageURI(Uri.fromFile(compressedFile))
+                    val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                    Log.d("MainActivity", message)
+                    // Imposta il listener per il bottone sendEmailButton con il messaggio
+                    sendEmailButton.setOnClickListener {
+                        sendEmail(uri, message)
+                    }
+                } else {
+                    Log.e("MainActivity", "Bitmap is null, cannot process image")
+                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -451,10 +454,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private fun getCityName(latitude: Double?, longitude: Double?): String {
         if (latitude == null || longitude == null) return "City name not available"
         val geocoder = Geocoder(this, Locale.getDefault())
-        val locationList = geocoder.getFromLocation(latitude, longitude, 1)
-        return if (!locationList.isNullOrEmpty()) {
-            locationList[0].locality ?: "City name not available"
-        } else {
+        return try {
+            val locationList = geocoder.getFromLocation(latitude, longitude, 1)
+            if (locationList != null && locationList.isNotEmpty()) {
+                locationList[0].locality ?: "City name not available"
+            } else {
+                "City name not available"
+            }
+        } catch (e: IOException) {
+            Log.e("MainActivity", "Geocoder failed to get city name", e)
             "City name not available"
         }
     }
@@ -495,7 +503,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             val message = """
             **Description Audit:**
             Here is the photo taken at the following location:
-                
+
             - **ImageID:** $uniqueID
             - **Coordinates:**
               - Latitude: $latitude
@@ -503,15 +511,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
             - **City:** ${getCityName(latitude, longitude)}
             - **Address:** $address
-            - **DateTime:** $currentDateTime 
+            - **DateTime:** $currentDateTime
 
-            **Map Citylog Preview:** 
+            **Map Citylog Preview:**
             $mapUrl
-            
+
             - **Warning Transmission Image:**
               - ImageID: $uniqueID
               - FocusImage:
-            """.  trimIndent()
+            """.trimIndent()
 
             // Creazione del messaggio formattato in HTML
             val formattedMessage = """
@@ -633,8 +641,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
     // Funzione per ottenere l'indirizzo completo utilizzando le coordinate
     private fun getAddress(latitude: Double, longitude: Double): String {
         val geoCoder = Geocoder(this, Locale.getDefault())
-        val addresses = geoCoder.getFromLocation(latitude, longitude, 1)
-        return addresses?.get(0)?.getAddressLine(0) ?: "Address not available"
+        return try {
+            val addresses = geoCoder.getFromLocation(latitude, longitude, 1)
+            if (addresses != null && addresses.isNotEmpty()) {
+                addresses[0].getAddressLine(0) ?: "Address not available"
+            } else {
+                "Address not available"
+            }
+        } catch (e: IOException) {
+            Log.e("MainActivity", "Geocoder failed to get address", e)
+            "Address not available"
+        }
     }
 
     private fun showFacebookProfilePicture() {
@@ -682,7 +699,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             //Picasso.get().load(profileImageUrl).into(imageView)
             Picasso.get()
                 .load(imageUrl)
-                .error(R.drawable.account_generic  ) // Immagine di errore se fallisce
+                .error(R.drawable.account_generic)
                 .into(imageView)
         }
     }
