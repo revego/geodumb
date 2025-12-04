@@ -2,7 +2,7 @@
 <resources>
 
     <!-- Tema principale dell'app (Material3) -->
-    <style name="Theme.StumpAnalyzer" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.GeoDumb" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Colori primari (quelli ambra del tuo design) -->
         <item name="colorPrimary">@color/amber_600</item>
         <item name="colorOnPrimary">@color/white</item>

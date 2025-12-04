@@ -27,7 +27,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.StumpAnalyzer"
+        android:theme="@style/Theme.Geodumb"
         tools:targetApi="31">
 
         <meta-data
