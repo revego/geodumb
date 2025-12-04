@@ -1,26 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<<<<<<< HEAD
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-=======
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
->>>>>>> api-insert-remove-new-them
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-<<<<<<< HEAD
-    android:background="@drawable/gradient_background"
-    android:fitsSystemWindows="true">
-
-    <!-- TOOLBAR FISSO IN ALTO -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/amber_800"
-        android:elevation="8dp"
-        app:titleTextColor="@color/white">
-=======
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
@@ -29,7 +13,6 @@
         android:layout_height="wrap_content"
         android:fitsSystemWindows="true"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
->>>>>>> api-insert-remove-new-them
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -52,168 +35,6 @@
             android:id="@+id/bottom_navigation"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-<<<<<<< HEAD
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="16dp">
-
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_sort_by_size"
-                android:tint="@color/white" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginStart="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="GeoDumb"
-                    android:textColor="@color/white"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Segnalazioni Geografiche"
-                    android:textColor="@color/amber_200"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="end">
-
-                <ImageView
-                    android:id="@+id/img_account"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:src="@drawable/account_generic"
-                    android:layout_gravity="end" />
-
-                <TextView
-                    android:id="@+id/txt_username"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="User"
-                    android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
-
-        </LinearLayout>
-    </com.google.android.material.appbar.MaterialToolbar>
-
-    <!-- CONTENUTO SCORRIBILE (spazio sotto il Toolbar!) -->
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingTop="88dp"
-        android:clipToPadding="false"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <!-- Card "Come fotografare" -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="6dp"
-                app:strokeColor="@color/amber_500"
-                app:strokeWidth="3dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@android:drawable/ic_menu_info_details"
-                        android:tint="@color/amber_600" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="Come fotografare il problema:\n• Inquadra bene la zona\n• Scatta in luce naturale\n• Tieni la fotocamera parallela"
-                        android:textColor="@color/gray_800"
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Anteprima foto -->
-            <ImageView
-                android:id="@+id/img_photo"
-                android:layout_width="match_parent"
-                android:layout_height="380dp"
-                android:layout_marginBottom="16dp"
-                android:background="@color/gray_900"
-                android:scaleType="centerCrop"
-                android:contentDescription="Foto scattata" />
-
-            <!-- Pulsante Scatta Foto -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_take_photo"
-                android:layout_width="match_parent"
-                android:layout_height="68dp"
-                android:text="Scatta Foto"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:icon="@drawable/ic_camera"
-                app:iconGravity="textStart"
-                app:iconPadding="16dp"
-                app:cornerRadius="16dp"
-                android:backgroundTint="@color/amber_600"
-                android:textColor="@color/white"
-                android:layout_marginBottom="16dp" />
-
-            <!-- Pulsante Invia Email -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_send_email"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="Invia Segnalazione"
-                app:icon="@drawable/ic_email"
-                app:iconGravity="textStart"
-                app:cornerRadius="16dp"
-                android:backgroundTint="@color/green_600"
-                android:textColor="@color/white" />
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- Bottom Navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="@color/white"
-        app:itemIconTint="@drawable/nav_item_color"
-        app:itemTextColor="@drawable/nav_item_color"
-        app:menu="@menu/bottom_nav_menu" />
-
-=======
             android:background="?attr/colorSecondary"
             app:itemIconTint="@android:color/white"
             app:itemTextColor="@android:color/white"
@@ -526,5 +347,4 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
->>>>>>> api-insert-remove-new-them
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
