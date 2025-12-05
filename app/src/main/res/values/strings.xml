@@ -11,6 +11,8 @@
     <string name="fb_login_protocol_scheme">fb1233024841238630</string>
     <string name="facebook_client_token">EAARhbfepSGYBO7W3ZBc0bQR2f2BZAbRdXbWjQPFDUzobZCohY0IbNCiTM8xfNbJiyskGHBNZB3lWZAjL2ZB3yMwLZAWSV6LbIWdDKvVJMtnq7MpTZAHz1iOwuevbK94aoOfq6pUPgpYfshJZApP9FuuqZAAEAB8saYJzrgthhOXYsWpS5OaITmWbjt6kzZB5ITLQ4ZAkrAZDZD</string>
     <string name="user_profile_picture">Nome Utente</string>
+    <string name="legal_acceptance_text"><![CDATA[Dichiaro di aver letto e accettato i <a href="terms">Termini di Servizio</a> e la <a href="privacy">Privacy Policy</a>.]]></string>
+
 
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
