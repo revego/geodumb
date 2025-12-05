@@ -167,16 +167,38 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            // --- QUESTA È LA MODIFICA CHIAVE ---
+            R.id.action_profile_menu -> { // Assumendo che questo sia l'ID del sottomenù/item
+                // Non fa nulla, serve solo ad aprire il sottomenù
+                true
+            }
+            R.id.action_profile -> {
+                val intent = Intent(this, FragmentContainerActivity::class.java)
+                intent.putExtra("FRAGMENT_NAME", "PROFILE") // Diciamo all'Activity di caricare il ProfileFragment
+                startActivity(intent)
+                true
+            }
+            // Aggiungi qui altri casi per le altre voci di menù
+            // R.id.action_settings -> { ... intent.putExtra("FRAGMENT_NAME", "SETTINGS") ... }
+
             R.id.action_logout -> {
-                // Effettua il logout da Facebook
                 logoutFacebook()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
+
+        //return when (item.itemId) {
+        //    R.id.action_logout -> {
+                // Effettua il logout da Facebook
+        //        logoutFacebook()
+        //        true
+        //    }
+        //    else -> super.onOptionsItemSelected(item)
+        //}
     }
 
-    private fun logoutFacebook() {
+    fun logoutFacebook() {
         // Logout da Facebook
         LoginManager.getInstance().logOut()
         Log.d("FacebookLogin", "Utente disconnesso")
