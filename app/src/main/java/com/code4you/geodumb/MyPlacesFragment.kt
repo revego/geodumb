@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+<<<<<<< HEAD
 import android.widget.ProgressBar // Aggiungi una ProgressBar al layout per feedback
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -31,12 +32,26 @@ class MyPlacesFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
+=======
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
+
+class MyPlacesFragment : Fragment() {
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Collega il layout XML a questa classe
+>>>>>>> 05a602a (update completed for MyPlaces)
         return inflater.inflate(R.layout.fragment_my_places, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+<<<<<<< HEAD
         recyclerView = view.findViewById(R.id.my_places_recyclerview)
         // progressBar = view.findViewById(R.id.progress_bar) // Trova la ProgressBar
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -71,5 +86,11 @@ class MyPlacesFragment : Fragment() {
                 Toast.makeText(requireContext(), "Errore di connessione: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
+=======
+        // Qui, in futuro, configurerai il RecyclerView per mostrare la lista
+        // dei luoghi salvati dall'utente.
+        val recyclerView = view.findViewById<RecyclerView>(R.id.my_places_recyclerview)
+        // ... logica per popolare la lista ...
+>>>>>>> 05a602a (update completed for MyPlaces)
     }
 }
