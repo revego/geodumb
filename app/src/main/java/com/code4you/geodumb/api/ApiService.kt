@@ -1,7 +1,9 @@
 package com.code4you.geodumb.api
 
 import android.media.Image
+import com.code4you.geodumb.data.MyPlace
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -37,5 +39,13 @@ interface ApiService {
     // Esempio di richiesta DELETE per inviare dati di un'immagine
     //@DELETE("images/{id}")
     //fun deleteImage(@Path("id") id: String): Call<Void>
+
+    // Definisce un endpoint GET per recuperare la lista dei luoghi
+    // Sostituisci "my-places-endpoint" con il vero percorso della tua API
+    @GET("censimento/no-auth")
+    suspend fun getMyPlaces(
+        // Esempio: se l'API richiede un token di autorizzazione
+        @Header("Authorization") authToken: String
+    ): Response<List<MyPlace>> // Si aspetta una lista di oggetti MyPlace
 
 }
