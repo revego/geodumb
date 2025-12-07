@@ -178,6 +178,13 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 startActivity(intent)
                 true
             }
+            // Gestisce il click sulla voce "I miei luoghi"
+            R.id.action_my_places -> {
+                val intent = Intent(this, FragmentContainerActivity::class.java)
+                intent.putExtra("FRAGMENT_NAME", "MY_PLACES") // Dice all'Activity di caricare il MyPlacesFragment
+                startActivity(intent)
+                true // Indica che l'evento è stato gestito
+            }
             // Aggiungi qui altri casi per le altre voci di menù
             // R.id.action_settings -> { ... intent.putExtra("FRAGMENT_NAME", "SETTINGS") ... }
 

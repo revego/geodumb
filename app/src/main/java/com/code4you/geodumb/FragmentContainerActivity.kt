@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 
+
 class FragmentContainerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +33,7 @@ class FragmentContainerActivity : AppCompatActivity() {
         return when (name) {
             // Ora questo funziona perché la classe è stata importata
             "PROFILE" -> ProfileFragment()
+            "MY_PLACES" -> MyPlacesFragment() // <-- AGGIUNGI QUESTO CASO
             // Aggiungi qui altri casi per futuri fragment
             // "SETTINGS" -> SettingsFragment()
             // "MY_PLACES" -> MyPlacesFragment()
@@ -42,6 +44,7 @@ class FragmentContainerActivity : AppCompatActivity() {
     private fun getTitleForFragment(name: String): String {
         return when (name) {
             "PROFILE" -> "Profilo Utente"
+            "MY_PLACES" -> "I Miei Luoghi" // <-- AGGIUNGI QUESTO CASO
             "SETTINGS" -> "Impostazioni"
             "MY_PLACES" -> "I Miei Luoghi"
             else -> "GeoDumb"
