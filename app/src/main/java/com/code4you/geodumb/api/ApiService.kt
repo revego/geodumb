@@ -40,12 +40,25 @@ interface ApiService {
     //@DELETE("images/{id}")
     //fun deleteImage(@Path("id") id: String): Call<Void>
 
-    // Definisce un endpoint GET per recuperare la lista dei luoghi
-    // Sostituisci "my-places-endpoint" con il vero percorso della tua API
-    @GET("censimento/no-auth")
+    // Esempio: mantenuto per la funzione originale ora commentata
+    // getMyPlaces ostituita da getMyPlacesWithAuth
+    @GET("rifiuti/no-auth")
     suspend fun getMyPlaces(
         // Esempio: se l'API richiede un token di autorizzazione
         @Header("Authorization") authToken: String
     ): Response<List<MyPlace>> // Si aspetta una lista di oggetti MyPlace
+
+    // Esempio: sefinisce un endpoint GET per recuperare la lista dei luoghi
+    // Sostituisci "my-places-endpoint" con il vero percorso della tua API
+    // utilizzando un token di autenticazione appropriato
+    @GET("censimento/no-auth")
+    suspend fun getMyPlacesWithAuth(
+        // Esempio: se l'API richiede un token di autorizzazione
+        @Header("Authorization") authToken: String
+    ): Response<List<MyPlace>> // Si aspetta una lista di oggetti MyPlace
+
+    // Versione più semplice per endpoint pubblico
+    @GET("censimento/no-auth")
+    suspend fun getMyPlacesNoAuth(): Response<List<MyPlace>>
 
 }

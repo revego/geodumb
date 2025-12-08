@@ -10,6 +10,17 @@ buildscript {
     }
 }
 
+fun getCurrentGitBranch(): String {
+    return try {
+        val process = Runtime.getRuntime().exec("git rev-parse --abbrev-ref HEAD")
+        process.waitFor()
+        val branch = process.inputStream.bufferedReader().readText().trim()
+        if (branch.isNotEmpty()) branch else "unknown"
+    } catch (e: Exception) {
+        "unknown"
+    }
+}
+
 android {
     namespace = "com.code4you.geodumb"
     compileSdk = 35
@@ -22,6 +33,8 @@ android {
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // ⬇️ Questo ora funzionerà
+        buildConfigField("String", "GIT_BRANCH", "\"${getCurrentGitBranch()}\"")
     }
 
     buildTypes {
@@ -42,6 +55,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -60,7 +74,8 @@ dependencies {
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.room.ktx)
     implementation(libs.cronet.embedded)
-    implementation(libs.google.material)
+    implementation("com.google.android.material:material:1.11.0")
+    //implementation(libs.google.material)
     //implementation(libs.androidx.camera.view)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
