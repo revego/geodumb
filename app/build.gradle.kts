@@ -22,9 +22,6 @@ android {
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // Aggiungi il branch Git come BuildConfig field
-        buildConfigField("String", "GIT_BRANCH", "\"${getGitBranch()}\"")
     }
 
     buildTypes {
@@ -45,17 +42,6 @@ android {
     }
     buildFeatures {
         viewBinding = true
-        buildConfig = true  // Assicurati che questa riga ci sia
-    }
-}
-
-// Funzione per ottenere il branch Git corrente
-fun getGitBranch(): String {
-    return try {
-        val process = Runtime.getRuntime().exec("git rev-parse --abbrev-ref HEAD")
-        process.inputStream.bufferedReader().readText().trim()
-    } catch (e: Exception) {
-        "unknown"
     }
 }
 
@@ -74,6 +60,8 @@ dependencies {
     implementation(libs.androidx.room.common.jvm)
     implementation(libs.androidx.room.ktx)
     implementation(libs.cronet.embedded)
+    implementation(libs.google.material)
+    //implementation(libs.androidx.camera.view)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -100,5 +88,9 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.12.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
+
+    implementation("androidx.camera:camera-camera2:1.4.0")
+    implementation("androidx.camera:camera-lifecycle:1.4.0")
+    implementation("androidx.camera:camera-view:1.4.0")
 
 }
