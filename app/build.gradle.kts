@@ -22,6 +22,9 @@ android {
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Aggiungi il branch Git come BuildConfig field
+        buildConfigField("String", "GIT_BRANCH", "\"${getGitBranch()}\"")
     }
 
     buildTypes {
@@ -42,6 +45,17 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true  // Assicurati che questa riga ci sia
+    }
+}
+
+// Funzione per ottenere il branch Git corrente
+fun getGitBranch(): String {
+    return try {
+        val process = Runtime.getRuntime().exec("git rev-parse --abbrev-ref HEAD")
+        process.inputStream.bufferedReader().readText().trim()
+    } catch (e: Exception) {
+        "unknown"
     }
 }
 

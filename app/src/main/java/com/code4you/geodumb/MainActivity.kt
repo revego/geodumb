@@ -336,11 +336,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
 
+        // Verifica che la directory esista
+        if (storageDir == null) {
+            throw IOException("External storage not available")
+        }
+
         // Ottieni i dati di geolocalizzazione
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
         }
+
         val location: Location? = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
         val latitude = location?.latitude ?: 0.0
         val longitude = location?.longitude ?: 0.0
