@@ -1,6 +1,7 @@
 package com.code4you.geodumb
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,7 +23,7 @@ class MyPlacesFragment : Fragment() {
 
     // Configura Retrofit. In un'app reale, questo andrebbe in una classe dedicata (Singleton)
     private val retrofit = Retrofit.Builder()
-        .baseUrl("https://api.citylog.cloud") // <<<--- CAMBIA QUESTO
+        .baseUrl("https://api.citylog.cloud/") // <<<--- CAMBIA QUESTO
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
@@ -45,7 +46,40 @@ class MyPlacesFragment : Fragment() {
         fetchMyPlaces()
     }
 
-    private fun fetchMyPlaces() {
+
+    private fun fetchMyPlaces(useAuth: Boolean = false, authToken: String? = null) {
+        lifecycleScope.launch {
+            try {
+                val response = if (useAuth && !authToken.isNullOrBlank()) {
+                    // Usa endpoint con autenticazione
+                    val token = if (!authToken.startsWith("Bearer ")) "Bearer $authToken" else authToken
+                    apiService.getMyPlacesWithAuth(token)
+                } else {
+                    // Usa endpoint senza autenticazione (no-auth)
+                    apiService.getMyPlacesNoAuth()
+                }
+
+                if (response.isSuccessful && response.body() != null) {
+                    val places = response.body()!!
+                    recyclerView.adapter = MyPlacesAdapter(places)
+                } else {
+                    val errorCode = response.code()
+                    val errorMsg = when (errorCode) {
+                        401 -> "Non autorizzato"
+                        404 -> "Endpoint non trovato"
+                        500 -> "Errore server"
+                        else -> "Errore ${response.code()}"
+                    }
+                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Errore di connessione: ${e.message}", Toast.LENGTH_SHORT).show()
+                Log.e("MyPlacesFragment", "Errore fetch", e)
+            }
+        }
+    }
+
+    private fun fetchMyPlaces_() {
         // progressBar.visibility = View.VISIBLE // Mostra il caricamento
 
         // lifecycleScope si occupa di cancellare la coroutine se il fragment viene distrutto

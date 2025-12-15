@@ -121,6 +121,21 @@
 
     </FrameLayout>
 
+    <!-- NUOVO: TextView per la versione -->
+    <TextView
+        android:id="@+id/version_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="v1.0.0"
+        android:textSize="12sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:alpha="0.6"
+        app:layout_constraintTop_toBottomOf="@id/facebook_login_button_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="12dp"
+        tools:text="v1.0.0 (main)" />
+
     <!-- Eliminata la vecchia sezione legale in fondo -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

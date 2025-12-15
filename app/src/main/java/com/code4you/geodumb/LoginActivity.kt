@@ -16,6 +16,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import com.facebook.AccessToken
+//import com.facebook.BuildConfig
+import com.code4you.geodumb.BuildConfig
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
@@ -28,6 +30,8 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var loginButton: LoginButton
     private lateinit var termsCheckbox: CheckBox
     private lateinit var legalText: TextView
+
+    private lateinit var versionText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,8 +50,14 @@ class LoginActivity : AppCompatActivity() {
         termsCheckbox = findViewById(R.id.terms_checkbox)
         legalText = findViewById(R.id.legal_text)
 
+        // ✅ AGGIUNGI QUESTA RIGA - Inizializza versionText
+        versionText = findViewById(R.id.version_text)
+
         // 2. Imposta il testo legale con i link cliccabili
         setupLegalText()
+
+        // Imposta la versione
+        setupVersionText()
 
         // 3. Aggiungi il listener alla checkbox
         termsCheckbox.setOnCheckedChangeListener { _, isChecked ->
@@ -130,6 +140,29 @@ class LoginActivity : AppCompatActivity() {
 
         legalText.text = spannableString
         legalText.movementMethod = LinkMovementMethod.getInstance() // Rendi i link cliccabili
+    }
+
+    private fun setupVersionText() {
+        val versionName = BuildConfig.VERSION_NAME
+        val branch = BuildConfig.GIT_BRANCH
+        val buildType = BuildConfig.BUILD_TYPE
+
+        // Opzione 1: Versione semplice
+        //versionText.text = "v$versionName"
+
+        // Opzione 2: Versione con branch (mostra solo in debug)
+        // if (BuildConfig.DEBUG) {
+        //     versionText.text = "v$versionName ($branch)"
+        // } else {
+        //     versionText.text = "v$versionName"
+        // }
+
+        // Opzione 3: Versione completa con build type
+        versionText.text = "v$versionName-$branch ($buildType)"
+
+        // Opzione 4: Versione con versionCode
+        // val versionCode = BuildConfig.VERSION_CODE
+        // versionText.text = "v$versionName ($versionCode)"
     }
 
     private fun handleFacebookAccessToken(token: AccessToken?) {
