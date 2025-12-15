@@ -76,6 +76,11 @@
             android:name="com.facebook.CustomTabActivity"
             android:exported="true" />
 
+        <!-- Dichiarazione della nuova Activity per ospitare i Fragment -->
+        <activity
+            android:name=".FragmentContainerActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

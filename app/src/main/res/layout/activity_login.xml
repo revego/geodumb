@@ -1,53 +1,141 @@
-<LinearLayout
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp"
-    android:background="@color/facebook_white">
+    android:background="@color/pastel_background"
+    android:padding="32dp"
+    tools:context=".LoginActivity">
 
-    <!-- Logo Facebook -->
+    <!-- Logo e testi rimangono invariati -->
     <ImageView
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:src="@drawable/ic_facebook_logo"
-        android:contentDescription="Facebook Logo"
-        android:layout_marginBottom="24dp"/>
+        android:id="@+id/app_logo"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:src="@drawable/ic_launcher_foreground"
+        android:contentDescription="Logo dell'App"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_top"
+        tools:background="#e0e0e0"/>
 
-    <!-- Testo di Benvenuto -->
-    <TextView
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_top"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Accedi con Facebook per continuare"
-        android:textSize="18sp"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.4" />
+
+    <TextView
+        android:id="@+id/welcome_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Accedi per iniziare a esplorare"
+        android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="@color/facebook_dark_blue"
+        android:textColor="?attr/colorOnSurface"
         android:gravity="center"
-        android:paddingBottom="20dp"/>
+        app:layout_constraintTop_toBottomOf="@id/guideline_top"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
 
-    <!-- Pulsante di Login Facebook -->
-    <com.facebook.login.widget.LoginButton
-        android:id="@+id/facebook_login_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
-    <!-- Link alla Privacy Policy -->
     <TextView
+        android:id="@+id/description_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Usa il tuo account social per un accesso rapido e sicuro"
+        android:textSize="16sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/welcome_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"/>
+
+
+    <!--
+    !!! MODIFICA 1: SPOSTIAMO LA SEZIONE LEGALE PRIMA DEL PULSANTE !!!
+    Ho usato un ConstraintLayout per allineare meglio checkbox e testo.
+    -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/legal_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/description_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="40dp">
+
+        <CheckBox
+            android:id="@+id/terms_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/legal_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/legal_acceptance_text"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="14sp"
+            app:layout_constraintStart_toEndOf="@id/terms_checkbox"
+            app:layout_constraintTop_toTopOf="@id/terms_checkbox"
+            app:layout_constraintBottom_toBottomOf="@id/terms_checkbox"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!--
+    !!! MODIFICA 2: IL PULSANTE È DISABILITATO DI DEFAULT !!!
+    Aggiunto android:enabled="false" e vincolato sotto la nuova sezione legale.
+    -->
+    <FrameLayout
+        android:id="@+id/facebook_login_button_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/legal_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp">
+
+        <com.facebook.login.widget.LoginButton
+            android:id="@+id/facebook_login_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="16sp"
+            android:enabled="false"
+            tools:enabled="true" />
+        <!-- tools:enabled="true" è solo per vedere il pulsante attivo nell'anteprima -->
+
+    </FrameLayout>
+
+    <!-- NUOVO: TextView per la versione -->
+    <TextView
+        android:id="@+id/version_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Leggi la nostra Privacy Policy"
-        android:textSize="14sp"
-        android:textColor="@color/facebook_blue"
-        android:paddingTop="20dp"
-        android:onClick="openPrivacyPolicy"/>
+        android:text="v1.0.0"
+        android:textSize="12sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:alpha="0.6"
+        app:layout_constraintTop_toBottomOf="@id/facebook_login_button_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="12dp"
+        tools:text="v1.0.0 (main)" />
 
-    <!-- Link ai Termini di Servizio -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Termini di Servizio"
-        android:textSize="14sp"
-        android:textColor="@color/facebook_blue"
-        android:onClick="openTermsOfService"/>
-</LinearLayout>
+    <!-- Eliminata la vecchia sezione legale in fondo -->
+
+</androidx.constraintlayout.widget.ConstraintLayout>
