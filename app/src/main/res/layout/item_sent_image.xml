@@ -1,45 +1,83 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="8dp"
+    android:background="@android:color/white"
+    android:layout_marginBottom="8dp"
+    android:elevation="2dp">
 
+    <!-- Immagine principale -->
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:scaleType="centerCrop" />
+        android:scaleType="centerCrop"
+        android:contentDescription="Immagine inviata"
+        android:background="@color/pastel_gray_secondary" />
 
+    <!-- Informazioni utente -->
+    <TextView
+        android:id="@+id/textViewUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Utente: Non autenticato"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp" />
+
+    <!-- ID Record (NUOVO) -->
+    <TextView
+        android:id="@+id/textViewRecordId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ID: NON CARICATO"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:layout_marginTop="4dp" />
+
+    <!-- Data -->
     <TextView
         android:id="@+id/textViewDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Date: Placeholder" />
+        android:text="Date: Placeholder"
+        android:layout_marginTop="4dp" />
 
+    <!-- Indirizzo -->
     <TextView
         android:id="@+id/textViewAddress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Address: Placeholder" />
+        android:text="Address: Placeholder"
+        android:layout_marginTop="4dp" />
 
+    <!-- Bottoni azione -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp">
 
         <Button
             android:id="@+id/deleteButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Delete" />
+            android:text="Delete"
+            android:backgroundTint="@color/red"
+            android:textColor="@color/white"
+            android:layout_marginEnd="4dp" />
 
         <Button
             android:id="@+id/mapButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Map" />
+            android:text="Map"
+            android:backgroundTint="@color/blue"
+            android:textColor="@color/white"
+            android:layout_marginStart="4dp" />
     </LinearLayout>
 </LinearLayout>

@@ -93,6 +93,17 @@
                             android:textColor="@color/black"
                             android:textSize="18sp"
                             android:textStyle="bold" />
+
+                        <!-- Sotto il txt_username -->
+                        <TextView
+                            android:id="@+id/txt_token_info"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="10sp"
+                            android:textColor="@color/green_700"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:visibility="gone" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

@@ -33,28 +33,28 @@
         android:id="@+id/welcome_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
         android:text="Accedi per iniziare a esplorare"
+        android:textColor="@color/black"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="?attr/colorOnSurface"
-        android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/guideline_top"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/guideline_top" />
 
     <TextView
         android:id="@+id/description_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Usa il tuo account social per un accesso rapido e sicuro"
-        android:textSize="16sp"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginTop="8dp"
         android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/welcome_text"
-        app:layout_constraintStart_toStartOf="parent"
+        android:text="Usa il tuo account social per un accesso rapido e sicuro"
+        android:textColor="@color/black"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/welcome_text" />
 
 
     <!--
@@ -81,14 +81,14 @@
             android:id="@+id/legal_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:text="@string/legal_acceptance_text"
-            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textColor="@color/colorOnSecondary"
             android:textSize="14sp"
-            app:layout_constraintStart_toEndOf="@id/terms_checkbox"
-            app:layout_constraintTop_toTopOf="@id/terms_checkbox"
             app:layout_constraintBottom_toBottomOf="@id/terms_checkbox"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="8dp" />
+            app:layout_constraintStart_toEndOf="@id/terms_checkbox"
+            app:layout_constraintTop_toTopOf="@id/terms_checkbox" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -126,14 +126,14 @@
         android:id="@+id/version_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="v1.0.0"
-        android:textSize="12sp"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:alpha="0.6"
-        app:layout_constraintTop_toBottomOf="@id/facebook_login_button_container"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="12dp"
+        android:alpha="0.6"
+        android:text="v1.0.0"
+        android:textColor="@color/grey_800"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/facebook_login_button_container"
         tools:text="v1.0.0 (main)" />
 
     <!-- Eliminata la vecchia sezione legale in fondo -->
