@@ -92,4 +92,7 @@
     <color name="grey_800">#424242</color>
     <color name="blue_600">#1E88E5</color>
 
+    <color name="red">#F44336</color>
+    <color name="blue">#2196F3</color>
+
 </resources>
