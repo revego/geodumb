@@ -133,10 +133,12 @@ interface ApiService {
     /**
      * Elimina record rifiuti
      */
-    @DELETE("rifiuti/{id}")
-    suspend fun deleteRifiutiSuspend(
-        @Path("id") id: Int
-    ): Response<Unit>
+
+    @GET("rifiuti/legacy/resolve-image-id")
+    fun resolveImageId(
+        @Query("filename") filename: String,
+        @Header("Authorization") token: String
+    ): Call<ResolveImageResponse>
 
     @DELETE("rifiuti/{id}")
     fun deleteRifiuti(
@@ -149,6 +151,11 @@ interface ApiService {
         @Query("page") page: Int,
         @Query("limit") limit: Int
     ): Call<List<Image>>
+
+    @DELETE("rifiuti/{id}")
+    suspend fun deleteRifiutiSuspend(
+        @Path("id") id: Int
+    ): Response<Unit>
 
     // ============ FILTERED ENDPOINTS ============
 
@@ -208,9 +215,6 @@ interface ApiService {
     // Versione più semplice per endpoint pubblico
     @GET("censimento/no-auth")
     suspend fun getMyPlacesNoAuth(): Response<List<MyPlace>>
-
-
-
 }
 
 // Estensione per gestire errori in modo più semplice

@@ -41,6 +41,8 @@ object ImageLogger {
         val sharedPreferences = context.getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
         val existingImages = sharedPreferences.getString(SENT_IMAGES_KEY, null)
 
+        Log.d("IMAGE_LOGGER", "PRIMA DELETE: $existingImages")
+
         if (existingImages != null) {
             val imagesList: MutableList<String> = try {
                 Gson().fromJson(existingImages, object : TypeToken<MutableList<String>>() {}.type)
@@ -48,15 +50,23 @@ object ImageLogger {
                 mutableListOf()
             }
 
+            val removed = imagesList.remove(imagePath)
+            Log.d("IMAGE_LOGGER", "Path rimosso? $removed")
+            Log.d("IMAGE_LOGGER", "DOPO DELETE: $imagesList")
+
+            sharedPreferences.edit()
+                .putString(SENT_IMAGES_KEY, Gson().toJson(imagesList))
+                .apply()
+
             // Rimuovi il percorso specifico
-            imagesList.remove(imagePath)
+            //imagesList.remove(imagePath)
 
             // Salva lista aggiornata
-            val editor = sharedPreferences.edit()
-            editor.putString(SENT_IMAGES_KEY, Gson().toJson(imagesList))
-            editor.apply()
+            //val editor = sharedPreferences.edit()
+            //editor.putString(SENT_IMAGES_KEY, Gson().toJson(imagesList))
+            //editor.apply()
 
-            Log.d("ImageLogger", "Immagine rimossa: $imagePath")
+            //Log.d("ImageLogger", "Immagine rimossa: $imagePath")
         }
     }
 }
