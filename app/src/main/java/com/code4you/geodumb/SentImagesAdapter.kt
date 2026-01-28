@@ -281,6 +281,9 @@ class SentImagesAdapter(
         val spHelper = SharedPreferencesHelper(context)
         spHelper.removeImageRecord(imagePath)
 
+        // 🔥 QUESTA È LA PARTE CRUCIALE
+        ImageLogger.removeImageFromSentImages(context, imagePath)
+
         // rimuovi da lista + UI
         val index = sentImages.indexOf(imagePath)
         if (index != -1) {
