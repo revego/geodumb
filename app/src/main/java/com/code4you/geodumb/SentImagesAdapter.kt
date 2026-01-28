@@ -14,11 +14,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.code4you.geodumb.api.ResolveImageResponse
 import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.api.RifiutiResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -76,18 +78,6 @@ class SentImagesAdapter(
         val spHelper = SharedPreferencesHelper(context)
         val recordId = spHelper.getImageRecordId(imagePath)
         holder.textViewRecordId.text = if (recordId != null) "ID: $recordId" else "ID: NON CARICATO"
-
-        //if (recordId != null) {
-        //    holder.textViewRecordId.text = "ID: $recordId"
-        //    holder.textViewRecordId.setTextColor(Color.parseColor("#4CAF50")) // Verde se ID presente
-        //    holder.textViewRecordId.setTypeface(null, Typeface.BOLD)
-        //    Log.d("ADAPTER", "Mostrato ID $recordId per pos $position")
-        //} else {
-        //    holder.textViewRecordId.text = "ID: NON CARICATO"
-        //    holder.textViewRecordId.setTextColor(Color.parseColor("#FF0000")) // Rosso se mancante
-        //    holder.textViewRecordId.setTypeface(null, Typeface.NORMAL)
-        //    Log.d("ADAPTER", "ID non trovato per pos $position")
-        //}
 
         // Gestione autenticazione
         if (isUserAuthenticated) {
@@ -194,6 +184,131 @@ class SentImagesAdapter(
     }
 
     private fun removeItemFromServer(position: Int, imagePath: String) {
+
+        val spHelper = SharedPreferencesHelper(context)
+        val token = spHelper.getAuthToken()
+
+        if (token.isNullOrBlank()) {
+            Toast.makeText(context, "Non autenticato", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        fun proceedWithDelete(recordId: Int) {
+            RetrofitClient.apiService
+                .deleteRifiuti(recordId)
+                .enqueue(object : Callback<Unit> {
+
+                    override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                        if (response.isSuccessful) {
+
+                            // 1️⃣ cancella file locale
+                            deleteLocalFile(imagePath)
+
+                            // 2️⃣ rimuovi mapping ID
+                            spHelper.removeImageRecord(imagePath)
+
+                            // 3️⃣ aggiorna RecyclerView
+                            val index = sentImages.indexOf(imagePath)
+                            if (index != -1) {
+                                sentImages.removeAt(index)
+                                notifyItemRemoved(index)
+                            }
+
+                            Toast.makeText(context, "Segnalazione eliminata", Toast.LENGTH_SHORT).show()
+
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Errore server (${response.code()})",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<Unit>, t: Throwable) {
+                        Toast.makeText(context, "Errore di rete", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }
+
+        // 🔑 1️⃣ prova a recuperare ID locale
+        val localRecordId = spHelper.getImageRecordId(imagePath)
+        if (localRecordId != null) {
+            proceedWithDelete(localRecordId)
+            return
+        }
+
+        // 🌐 2️⃣ fallback: risolvi ID dal backend
+        val filename = imagePath.substringAfterLast("/")
+        RetrofitClient.apiService
+            .resolveImageId(filename)
+            .enqueue(object : Callback<ResolveImageResponse> {
+
+                override fun onResponse(
+                    call: Call<ResolveImageResponse>,
+                    response: Response<ResolveImageResponse>
+                ) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val resolvedId = response.body()!!.id
+                        spHelper.saveImageRecord(imagePath, resolvedId)
+                        proceedWithDelete(resolvedId)
+                    } else if (response.code() == 404) {
+                        // Immagine orfana: esiste localmente ma non sul server
+                        removeLocalOnly(imagePath)
+                        Toast.makeText(context, "Segnalazione già rimossa dal server", Toast.LENGTH_SHORT).show()
+                    }
+                    else {
+                        Toast.makeText(
+                            context,
+                            "Errore server (${response.code()})",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<ResolveImageResponse>, t: Throwable) {
+                    Toast.makeText(context, "Errore rete resolveImageId", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    private fun removeLocalOnly(imagePath: String) {
+
+        // elimina file
+        deleteLocalFile(imagePath)
+
+        // elimina mapping ID
+        val spHelper = SharedPreferencesHelper(context)
+        spHelper.removeImageRecord(imagePath)
+
+        // rimuovi da lista + UI
+        val index = sentImages.indexOf(imagePath)
+        if (index != -1) {
+            sentImages.removeAt(index)
+            notifyItemRemoved(index)
+        }
+
+        Log.w("ORPHAN_IMAGE", "Immagine orfana rimossa localmente: $imagePath")
+    }
+
+
+    private fun deleteLocalFile(imagePath: String): Boolean {
+        return try {
+            val file = File(imagePath)
+            if (file.exists()) {
+                file.delete()
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            Log.e("LOCAL_DELETE", "Errore eliminazione file", e)
+            false
+        }
+    }
+
+
+
+    private fun removeItemFromServer2(position: Int, imagePath: String) {
         // DEBUG: Log all authentication sources
         Log.d("DELETE_DEBUG", "=== INIZIO ELIMINAZIONE ===")
 
@@ -275,44 +390,6 @@ class SentImagesAdapter(
                 Log.e("CALL_DEBUG", "Failure: ${t.message}", t)
             }
         })
-
-        /*
-        RetrofitClient.apiService.getRifiutoByCoordinate(
-            latitude.toString(),
-            longitude.toString()
-        ).enqueue(object : Callback<RifiutiResponse> {
-            override fun onResponse(call: Call<RifiutiResponse>, response: Response<RifiutiResponse>) {
-
-                Log.d("DEBUG", "onResponse chiamato - Code: ${response.code()}, Success: ${response.isSuccessful}")
-                if (response.isSuccessful) {
-                    val rifiuto = response.body()
-                    val recordId = rifiuto?.id
-                    Log.d("DEBUG", "Record ID trovato: $recordId")
-
-                    recordId?.let { id ->
-                        RetrofitClient.apiService.deleteRifiuti(id).enqueue(object : Callback<Unit> {
-                            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                                Log.d("DEBUG", "Delete onResponse - Code: ${response.code()}, Success: ${response.isSuccessful}")
-                                if (response.isSuccessful) {
-                                    Log.d("DELETE", "Record $id cancellato con successo")
-                                    // Aggiorna UI qui
-                                } else {
-                                    Log.e("DELETE", "Errore nella cancellazione: ${response.code()}")
-                                }
-                            }
-
-                            override fun onFailure(call: Call<Unit>, t: Throwable) {
-                                Log.e("DELETE", "Errore di rete", t)
-                            }
-                        })
-                    }
-                }
-            }
-
-            override fun onFailure(call: Call<RifiutiResponse>, t: Throwable) {
-                Log.e("GET_RECORD", "Errore di rete o altro", t)
-            }
-        })*/
 
         RetrofitClient.apiService.deleteImage(
             "Bearer $token",
