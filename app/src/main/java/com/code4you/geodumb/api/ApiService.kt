@@ -59,6 +59,12 @@ data class FacebookLoginResponse(
     @SerializedName("email") val email: String?
 )
 
+data class ResolveImageResponse(
+    @SerializedName("id") val id: Int,
+    @SerializedName("image_id") val imageId: String,
+    @SerializedName("image_url") val imageUrl: String
+)
+
 data class UserData(
     val id: String,
     val name: String,
@@ -75,6 +81,7 @@ interface ApiService {
     ): Response<FacebookLoginResponse>
 
     // ============ RIFIUTI ENDPOINTS ============
+
     /**
      * Ottieni tutti i rifiuti (autenticato)
      */
@@ -110,6 +117,13 @@ interface ApiService {
     /**
      * Ottieni un singolo record rifiuto specifico in base a coordinate e timestamp
      */
+
+    @GET("rifiuti/legacy/resolve-image-id")
+    fun resolveImageId(
+        @Query("filename") filename: String
+        //@Header("Authorization") token: String
+    ): Call<ResolveImageResponse>
+
     @GET("rifiuti/record/")
     fun getRifiutoByCoordinate(
         @Query("latitude") latitude: String,
