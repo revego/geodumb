@@ -100,6 +100,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
         showTokenInfo()
     }
 
+    override fun onResume() {
+        super.onResume()
+        updateSentImagesCount()
+    }
+
+    private fun updateSentImagesCount() {
+        val sentImagesCount = ImageLogger.getSentImages(this).size
+        val tvCount = findViewById<TextView>(R.id.txt_images_sent)
+        tvCount.text = "$sentImagesCount"
+    }
+
     private fun checkAuthentication(): Boolean {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val fbToken = AccessToken.getCurrentAccessToken()
