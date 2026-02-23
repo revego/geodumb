@@ -111,6 +111,21 @@ class SharedPreferencesHelper(context: Context) {
 
         return recordsMap[imageKey]
     }
+    /*
+    fun saveImageRecordId(imagePath: String, recordId: Int) {
+        val fileName = imagePath.substringAfterLast("/")
+
+        val currentRecords = prefs.getString(KEY_IMAGE_RECORDS, "") ?: ""
+        val recordsMap = parseSimpleRecords(currentRecords).toMutableMap()
+
+        recordsMap[fileName] = recordId
+
+        val newRecords = recordsMap.entries.joinToString(",") { "${it.key}:${it.value}" }
+        prefs.edit().putString(KEY_IMAGE_RECORDS, newRecords).apply()
+
+        Log.d("SharedPrefs", "Salvato record $recordId per $fileName")
+    }*/
+
 
     fun removeImageRecord(imagePath: String) {
         val fileName = imagePath.substringAfterLast("/")

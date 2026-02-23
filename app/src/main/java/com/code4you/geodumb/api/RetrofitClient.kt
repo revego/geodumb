@@ -118,7 +118,7 @@ object RetrofitClient {
             })
             .addInterceptor(urlLogger)  // ← mettilo PRIMA degli altri
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor)
+            .addInterceptor(authInterceptor) //gestisce l'aggiunta del token JWT
             .addInterceptor(errorInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

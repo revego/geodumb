@@ -520,7 +520,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
                     Log.d(TAG, message)
 
                     sendEmailButton.setOnClickListener {
-                        sendEmail(uri, message)
+                        sendEmail(uri, message, AccessToken.getCurrentAccessToken())
                     }
                 } else {
                     Log.e(TAG, "Bitmap is null, cannot process image")
@@ -576,12 +576,14 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     @SuppressLint("StringFormatInvalid")
-    private fun sendEmail(photoUri: Uri, message: String) {
+    private fun sendEmail(photoUri: Uri, message: String, token: AccessToken?) {
         val emailIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
             putExtra(Intent.EXTRA_EMAIL, arrayOf("report@citylog.cloud"))
             putExtra(Intent.EXTRA_SUBJECT, "Report from GeoDumb")
             putExtra(Intent.EXTRA_STREAM, photoUri)
+
+            val userId = token?.userId ?: "UNKNOWN"
 
             val address = latitude?.let { lat ->
                 longitude?.let { lon ->
@@ -600,6 +602,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
             Here is the photo taken at the following location:
 
             - **ImageID:** $uniqueID
+            - **UserID:** $userId
+            
             - **Coordinates:**
               - Latitude: $latitude
               - Longitude: $longitude
@@ -610,7 +614,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
             **Map Citylog Preview:**
             $mapUrl
-
+            
             - **Warning Transmission Image:**
               - ImageID: $uniqueID
               - FocusImage:

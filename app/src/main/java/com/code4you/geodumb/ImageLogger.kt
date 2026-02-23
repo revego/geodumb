@@ -11,6 +11,26 @@ object ImageLogger {
     private const val SENT_IMAGES_PREF = "SentImagesPref"
     private const val SENT_IMAGES_KEY = "SentImages"
 
+    fun addImageToSentImages(context: Context, imagePath: String) {
+
+        val sharedPreferences = context.getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
+        val existingImages = sharedPreferences.getString(SENT_IMAGES_KEY, null)
+
+        val imagesList: MutableList<String> = if (existingImages != null) {
+            Gson().fromJson(existingImages, object : TypeToken<MutableList<String>>() {}.type)
+        } else {
+            mutableListOf()
+        }
+
+        if (!imagesList.contains(imagePath)) {
+            imagesList.add(imagePath)
+        }
+
+        sharedPreferences.edit()
+            .putString(SENT_IMAGES_KEY, Gson().toJson(imagesList))
+            .apply()
+    }
+
     fun logSentImages(context: Context) {
         val sharedPreferences = context.getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
         val existingImages = sharedPreferences.getString(SENT_IMAGES_KEY, null)
@@ -30,6 +50,14 @@ object ImageLogger {
             listOf()
         }
     }
+
+    fun setSentImages(context: Context, images: List<String>) {
+        val sharedPreferences = context.getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
+        sharedPreferences.edit()
+            .putString(SENT_IMAGES_KEY, Gson().toJson(images))
+            .apply()
+    }
+
 
     private fun getAddress(context: Context, latitude: Double, longitude: Double): String {
         val geoCoder = Geocoder(context, Locale.getDefault())

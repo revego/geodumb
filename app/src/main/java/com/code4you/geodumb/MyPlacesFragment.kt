@@ -23,7 +23,7 @@ class MyPlacesFragment : Fragment() {
 
     // Configura Retrofit. In un'app reale, questo andrebbe in una classe dedicata (Singleton)
     private val retrofit = Retrofit.Builder()
-        .baseUrl("https://api.citylog.cloud/") // <<<--- CAMBIA QUESTO
+        .baseUrl("https://api.citylog.cloud") // <<<--- CAMBIA QUESTO
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
