@@ -33,6 +33,8 @@ data class RifiutiResponse(
     @SerializedName("latitude") val latitude: String,
     @SerializedName("longitude") val longitude: String,
     @SerializedName("typo") val typo: String,
+    @SerializedName("address") val address: String,
+    @SerializedName("image_url") val imageUrl: String,
     @SerializedName("user_id") val userId: Int?,
     @SerializedName("created_at") val createdAt: String?,
     @SerializedName("image_time") val imageTime: String?,
@@ -85,7 +87,7 @@ interface ApiService {
     /**
      * Ottieni tutti i rifiuti (autenticato)
      */
-    @GET("rifiuti")
+    @GET("rifiuti/")
     suspend fun getRifiuti(): Response<List<RifiutiResponse>>
 
     /**
@@ -135,7 +137,7 @@ interface ApiService {
      */
 
     @GET("rifiuti/legacy/resolve-image-id")
-    fun resolveImageId(
+    fun resolveImageId2(
         @Query("filename") filename: String,
         @Header("Authorization") token: String
     ): Call<ResolveImageResponse>

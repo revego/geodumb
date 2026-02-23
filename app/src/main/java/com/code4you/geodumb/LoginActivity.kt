@@ -274,19 +274,19 @@ class LoginActivity : AppCompatActivity() {
                     // AGGIUNGI QUESTO FALLBACK:
                     Log.w("FacebookLogin", "Fallback a Facebook-only mode")
 
-                    val fakeJWT = "fake_jwt_${System.currentTimeMillis()}_${token?.userId ?: "unknown"}"
-                    RetrofitClient.updateAuthToken(fakeJWT)
+                    //val fakeJWT = "fake_jwt_${System.currentTimeMillis()}_${token?.userId ?: "unknown"}"
+                    //RetrofitClient.updateAuthToken(fakeJWT)
 
-                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                    prefs.edit().apply {
-                        putString("auth_token", fakeJWT)
-                        token?.let {
-                            putString("fb_token_raw", it.token)
-                            putString("fb_user_id", it.userId)
-                        }
-                        putBoolean("facebook_only_mode", true)
-                        apply()
-                    }
+                    //val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                    //prefs.edit().apply {
+                    //    putString("auth_token", fakeJWT)
+                    //    token?.let {
+                    //        putString("fb_token_raw", it.token)
+                    //        putString("fb_user_id", it.userId)
+                    //    }
+                    //    putBoolean("facebook_only_mode", true)
+                    //    apply()
+                    //}
                     Log.e("FacebookLogin", "Network error", e)
                 } finally {
                     showLoading(false)

@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide
 import com.code4you.geodumb.api.ResolveImageResponse
 import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.api.RifiutiResponse
+import com.google.android.material.chip.Chip
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -28,9 +29,11 @@ class SentImagesAdapter(
     private val context: Context,
     private val sentImages: MutableList<String>
 
+
 ) : RecyclerView.Adapter<SentImagesAdapter.ViewHolder>() {
 
     private var isUserAuthenticated: Boolean = false
+    private var items: List<RifiutiResponse> = emptyList()
 
     fun setUserAuthenticated(authenticated: Boolean) {
         isUserAuthenticated = authenticated
@@ -46,6 +49,7 @@ class SentImagesAdapter(
         val deleteButton: Button = view.findViewById(R.id.deleteButton)
         val mapButton: Button = view.findViewById(R.id.mapButton)
 
+        val chipType: Chip = itemView.findViewById(R.id.chipType)
         val textViewRecordId: TextView = view.findViewById(R.id.textViewRecordId) // NUOVO
     }
 
@@ -55,66 +59,115 @@ class SentImagesAdapter(
         return ViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val imagePath = sentImages[position]
 
-        // DEBUG
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+
+        val item = items[position]
+
         Log.d("SENT_ADAPTER", "Posizione $position - Autenticato: $isUserAuthenticated")
 
-        // Pulisci immagine precedente
+        // Pulisci immagine precedentez\
         holder.imageView.setImageDrawable(null)
 
-        // Carica immagine SENZA placeholder/error (per ora)
-        Glide.with(context)
-            .load(imagePath)
+        // Carica immagine dal SERVER
+        Glide.with(holder.itemView.context)
+            .load(item.imageUrl)
             .into(holder.imageView)
 
-        // Estrai e mostra data
-        holder.textViewDate.text = "Date: " + getDateFromImagePath(imagePath)
-        // Estrai e mostra indirizzo
-        holder.textViewAddress.text = "Address: " + getAddressFromImagePath(imagePath)
+        holder.textViewDate.text = item.imageTime?.let { raw ->
+            val datePart = raw.substringBefore("T")
+            val timePart = raw.substringAfter("T").substringBefore(".")
+            "$datePart alle $timePart"
+        } ?: "Data non disponibile"
 
-        // Recupera e mostra l'ID del record
-        val spHelper = SharedPreferencesHelper(context)
-        val recordId = spHelper.getImageRecordId(imagePath)
-        holder.textViewRecordId.text = if (recordId != null) "ID: $recordId" else "ID: NON CARICATO"
+        // Mostra dati dal backend
+        //holder.textViewDate.text =
+        //    item.imageTime?.let {
+        //        formatDate(it, item.city ?: "")
+        //    } ?: "Data non disponibile"
+
+        //holder.textViewDate.text = item.imageTime?.substringBefore("T")
+        holder.textViewAddress.text = item.address
+        holder.textViewRecordId.text = "ID: ${item.id}"
+        holder.chipType.text = item.typo ?: "ND"
 
         // Gestione autenticazione
         if (isUserAuthenticated) {
             holder.deleteButton.visibility = View.VISIBLE
-            holder.textViewUser.visibility = View.GONE  // Nascondi "Non autenticato"
-            Log.d("ADAPTER_DEBUG", "Utente autenticato, nascondo textViewUser")
+            holder.textViewUser.visibility = View.GONE
         } else {
             holder.deleteButton.visibility = View.GONE
             holder.textViewUser.visibility = View.VISIBLE
             holder.textViewUser.text = "Utente: Non autenticato"
-            Log.d("ADAPTER_DEBUG", "Utente non autenticato, mostro textViewUser")
         }
 
-        // Usa absoluteAdapterPosition invece di bindingAdapterPosition
         val currentPosition = holder.absoluteAdapterPosition
         if (currentPosition != RecyclerView.NO_POSITION) {
+
             holder.deleteButton.setOnClickListener {
+
                 if (!isUserAuthenticated) {
-                    Toast.makeText(context, "Devi essere autenticato per eliminare il record", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "Devi essere autenticato per eliminare il record",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     return@setOnClickListener
                 }
-                showDeleteConfirmationDialog(currentPosition, imagePath)
+
+                showDeleteConfirmationDialog(currentPosition, item.id)
             }
 
             holder.mapButton.setOnClickListener {
-                val parsedData = parseImageFilename(imagePath)
-                if (parsedData != null) {
-                    val (_, latitude, longitude) = parsedData
+
+                // 🔥 ORA NON USIAMO PIÙ parseImageFilename
+
+                val latitude = item.latitude
+                val longitude = item.longitude
+
+                if (latitude != null && longitude != null) {
                     val mapUrl = "https://maps.google.com/?q=$latitude,$longitude"
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(mapUrl))
                     context.startActivity(intent)
+                } else {
+                    Toast.makeText(context, "Coordinate non disponibili", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
-    override fun getItemCount(): Int = sentImages.size
+    private fun formatDate(rawDate: String, city: String): String {
+
+        return try {
+
+            // Se timezone è +01 aggiungiamo :00 → +01:00
+            val normalizedDate = if (rawDate.matches(Regex(".*[+-]\\d{2}$"))) {
+                rawDate + ":00"
+            } else {
+                rawDate
+            }
+
+            val inputFormat = SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss.SSSSSSXXX",
+                Locale.getDefault()
+            )
+
+            val outputFormat = SimpleDateFormat(
+                "dd/MM/yyyy 'alle' HH:mm",
+                Locale.getDefault()
+            )
+
+            val date = inputFormat.parse(normalizedDate)
+
+            "$city, ${outputFormat.format(date!!)}"
+
+        } catch (e: Exception) {
+            "$city, $rawDate" // fallback se qualcosa va storto
+        }
+    }
+
+
+    override fun getItemCount(): Int = items.size
 
     private fun getAddressFromImagePath(imagePath: String): String {
         val fileName = imagePath.substringAfterLast("/")
@@ -172,18 +225,62 @@ class SentImagesAdapter(
         }
     }
 
-    private fun showDeleteConfirmationDialog(position: Int, imagePath: String) {
+    private fun showDeleteConfirmationDialog(position: Int, recordInt: Int) {
         AlertDialog.Builder(context)
             .setTitle("Conferma eliminazione")
             .setMessage("Vuoi davvero eliminare questa immagine?")
             .setPositiveButton("Elimina") { _, _ ->
-                removeItemFromServer(position, imagePath)
+                removeItemFromServer(position, recordInt)
             }
             .setNegativeButton("Annulla", null)
             .show()
     }
 
-    private fun removeItemFromServer(position: Int, imagePath: String) {
+    private fun removeItemFromServer(position: Int, recordId: Int) {
+
+        val spHelper = SharedPreferencesHelper(context)
+        val token = spHelper.getAuthToken()
+
+        if (token.isNullOrBlank()) {
+            Toast.makeText(context, "Non autenticato", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        RetrofitClient.apiService
+            .deleteRifiuti(recordId)
+            .enqueue(object : Callback<Unit> {
+
+                override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+
+                    if (response.isSuccessful) {
+
+                        // 🔥 Rimuovi dalla lista SERVER-BASED
+                        val mutable = items.toMutableList()
+                        mutable.removeAt(position)
+                        items = mutable
+
+                        notifyItemRemoved(position)
+
+                        Toast.makeText(context, "Segnalazione eliminata", Toast.LENGTH_SHORT).show()
+
+                    } else {
+
+                        val errorBody = response.errorBody()?.string()
+                        Toast.makeText(
+                            context,
+                            "Errore ${response.code()} -> $errorBody",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<Unit>, t: Throwable) {
+                    Toast.makeText(context, "Errore di rete", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    private fun removeItemFromServer2(position: Int, imagePath: String) {
 
         val spHelper = SharedPreferencesHelper(context)
         val token = spHelper.getAuthToken()
@@ -194,6 +291,17 @@ class SentImagesAdapter(
         }
 
         fun proceedWithDelete(recordId: Int) {
+
+            val freshToken = spHelper.getAuthToken()
+            Log.d("DELETE_JWT", freshToken.toString())
+
+            if (freshToken.isNullOrBlank()) {
+                Toast.makeText(context, "Sessione scaduta, rieffettua il login", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            Log.d("TOKEN_DEBUG", "freshToken = $freshToken")
+
             RetrofitClient.apiService
                 .deleteRifiuti(recordId)
                 .enqueue(object : Callback<Unit> {
@@ -216,11 +324,19 @@ class SentImagesAdapter(
 
                             Toast.makeText(context, "Segnalazione eliminata", Toast.LENGTH_SHORT).show()
 
-                        } else {
+                        //} else {
+                        //    Toast.makeText(
+                        //        context,
+                        //        "Errore server (${response.code()})",
+                        //        Toast.LENGTH_SHORT
+                        //    ).show()
+                        }
+                        if (!response.isSuccessful) {
+                            val errorBody = response.errorBody()?.string()
                             Toast.makeText(
                                 context,
-                                "Errore server (${response.code()})",
-                                Toast.LENGTH_SHORT
+                                "Errore ${response.code()} -> $errorBody",
+                                Toast.LENGTH_LONG
                             ).show()
                         }
                     }
@@ -309,152 +425,6 @@ class SentImagesAdapter(
         }
     }
 
-
-
-    private fun removeItemFromServer2(position: Int, imagePath: String) {
-        // DEBUG: Log all authentication sources
-        Log.d("DELETE_DEBUG", "=== INIZIO ELIMINAZIONE ===")
-
-        // 1. Rimozione ottimistica (temporaneamente commenta per test)
-        // sentImages.removeAt(position)
-        // notifyItemRemoved(position)
-        // notifyItemRangeChanged(position, itemCount)
-
-        val parsedData = parseImageFilename(imagePath)
-        if (parsedData == null) {
-            Log.e("SentImagesAdapter", "Errore nel parsing del nome file")
-            Toast.makeText(context, "Formato file non valido", Toast.LENGTH_SHORT).show()
-            // restoreItem(position, imagePath)
-            return
-        }
-
-        val (timestamp, latitude, longitude) = parsedData
-        val formattedDate = "${timestamp.substring(0, 4)}-${timestamp.substring(4, 6)}-${timestamp.substring(6, 8)}"
-
-        Log.d("DELETE_DEBUG", "Parametri per eliminazione:")
-        Log.d("DELETE_DEBUG", "- Latitude: $latitude")
-        Log.d("DELETE_DEBUG", "- Longitude: $longitude")
-        Log.d("DELETE_DEBUG", "- Date: $formattedDate")
-
-        // 2. OTTIENI IL TOKEN CORRETTAMENTE (3 metodi possibili)
-
-        // Metodo A: Da SharedPreferencesHelper (CORRETTO)
-        val sharedPreferencesHelper = SharedPreferencesHelper(context)
-        val tokenFromSPHelper = sharedPreferencesHelper.getAuthToken()
-        Log.d("DELETE_DEBUG", "Token da SharedPreferencesHelper: ${tokenFromSPHelper?.let { "PRESENTE (${it.length} chars)" } ?: "NULL"}")
-
-        // Metodo B: Da app_prefs direttamente
-        val appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val tokenFromAppPrefs = appPrefs.getString("auth_token", null)
-        Log.d("DELETE_DEBUG", "Token da app_prefs.auth_token: ${tokenFromAppPrefs?.let { "PRESENTE" } ?: "NULL"}")
-
-        // Metodo C: Da auth_prefs (probabilmente vuoto)
-        val authPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val tokenFromAuthPrefs = authPrefs.getString("access_token", null)
-        Log.d("DELETE_DEBUG", "Token da auth_prefs.access_token: ${tokenFromAuthPrefs?.let { "PRESENTE" } ?: "NULL"}")
-
-        // Usa il token da SharedPreferencesHelper (il corretto)
-        val token = tokenFromSPHelper ?: tokenFromAppPrefs
-
-        if (token.isNullOrEmpty()) {
-            Toast.makeText(context, "Token non trovato. Devi effettuare il login", Toast.LENGTH_SHORT).show()
-            Log.e("DELETE_DEBUG", "ERRORE: Token è null o vuoto")
-            // restoreItem(position, imagePath)
-            return
-        }
-
-        Log.d("DELETE_DEBUG", "Token usato per la chiamata (primi 30): ${token.take(30)}...")
-
-        // 3. DEBUG: Verifica se RetrofitClient considera il token valido
-        Log.d("DELETE_DEBUG", "RetrofitClient.isAuthenticated(): ${RetrofitClient.isAuthenticated()}")
-        Log.d("DELETE_DEBUG", "RetrofitClient.isJWTValid(): ${RetrofitClient.isJWTValid()}")
-
-        // 4. Fai la chiamata API
-        Log.d("DELETE_DEBUG", "Chiamando API DELETE...")
-
-        Log.d("DEBUG", "Prima della chiamata - lat: $latitude, long: $longitude, date: $formattedDate")
-
-        val formattedDateTime = formatDateForBackend(formattedDate)
-        // Ora puoi usare questo ID per chiamare il secondo endpoint
-        val call = RetrofitClient.apiService.getRifiutoByCoordinate(
-            latitude.toString(),
-            longitude.toString()
-        )
-
-        Log.d("CALL_DEBUG", "Call created: ${call.request().url}")
-
-        call.enqueue(object : Callback<RifiutiResponse> {
-            override fun onResponse(call: Call<RifiutiResponse>, response: Response<RifiutiResponse>) {
-                Log.d("CALL_DEBUG", "Response received!")
-                // ... il resto del codice
-            }
-
-            override fun onFailure(call: Call<RifiutiResponse>, t: Throwable) {
-                Log.e("CALL_DEBUG", "Failure: ${t.message}", t)
-            }
-        })
-
-        RetrofitClient.apiService.deleteImage(
-            "Bearer $token",
-            latitude.toString(),
-            longitude.toString(),
-            formattedDate
-        ).enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                Log.d("DELETE_DEBUG", "Risposta API - Codice: ${response.code()}")
-
-                if (response.isSuccessful) {
-                    Log.d("DELETE_DEBUG", "✅ Eliminazione riuscita")
-                    Toast.makeText(context, "Immagine eliminata", Toast.LENGTH_SHORT).show()
-
-                    // Ora rimuovi definitivamente dalla lista
-                    sentImages.removeAt(position)
-                    notifyItemRemoved(position)
-                    notifyItemRangeChanged(position, itemCount)
-                } else {
-                    Log.e("DELETE_DEBUG", "❌ Errore server: ${response.code()}")
-                    Log.e("DELETE_DEBUG", "Messaggio: ${response.message()}")
-
-                    when (response.code()) {
-                        401 -> {
-                            Toast.makeText(context,
-                                "Sessione scaduta. Rieffettua il login.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            // Aggiorna lo stato di autenticazione
-                            setUserAuthenticated(false)
-                        }
-                        403 -> {
-                            Toast.makeText(context,
-                                "Non hai i permessi per eliminare questa immagine",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                        404 -> {
-                            Toast.makeText(context,
-                                "Immagine non trovata sul server",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                        else -> {
-                            Toast.makeText(context,
-                                "Errore del server: ${response.code()}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                    // restoreItem(position, imagePath)
-                }
-            }
-
-            override fun onFailure(call: Call<Void>, t: Throwable) {
-                Log.e("DELETE_DEBUG", "❌ Errore di rete: ${t.message}")
-                Toast.makeText(context, "Errore di connessione: ${t.message}", Toast.LENGTH_SHORT).show()
-                // restoreItem(position, imagePath)
-            }
-        })
-    }
-
     // Nel tuo Adapter/Activity, formatta la data correttamente:
     fun formatDateForBackend(dateString: String): String {
         // Se la data è solo "2025-12-31", aggiungi l'orario
@@ -525,9 +495,81 @@ class SentImagesAdapter(
         notifyItemRangeChanged(position, itemCount)
     }
 
-    fun updateList(newList: List<String>) {
-        sentImages.clear()
-        sentImages.addAll(newList)
+    fun updateList(newList: List<RifiutiResponse>) {
+        //sentImages.clear()
+        //sentImages.addAll(newList)
+        items = newList
         notifyDataSetChanged()
     }
+
+    private fun resolveImageId__(holder: ViewHolder, imagePath: String) {
+
+        val context = holder.itemView.context
+        val spHelper = SharedPreferencesHelper(context)
+        val token = spHelper.getAuthToken()
+
+        if (token.isNullOrBlank()) {
+            holder.textViewRecordId.text = "—"
+            return
+        }
+
+        val filename = imagePath.substringAfterLast("/")
+
+        RetrofitClient.apiService
+            .resolveImageId2(filename, "Bearer $token")
+            .enqueue(object : Callback<ResolveImageResponse> {
+
+                override fun onResponse(
+                    call: Call<ResolveImageResponse>,
+                    response: Response<ResolveImageResponse>
+                ) {
+
+                    Log.d("RESOLVE_ID", "HTTP ${response.code()}")
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val id = response.body()!!.id
+                        spHelper.saveImageRecord(imagePath, id)
+                        holder.textViewRecordId.text = id.toString()
+                    } else {
+                        holder.textViewRecordId.text = "— ID: NON CARICATO"
+                    }
+                }
+
+                override fun onFailure(call: Call<ResolveImageResponse>, t: Throwable) {
+                    Log.e("RESOLVE_ID", "Errore rete", t)
+                    holder.textViewRecordId.text = "—"
+                }
+            })
+    }
+
+    private fun resolveImageId(holder: ViewHolder, imagePath: String) {
+
+        val filename = imagePath.substringAfterLast("/")
+        val spHelper = SharedPreferencesHelper(holder.itemView.context)
+
+        RetrofitClient.apiService
+            .resolveImageId(filename)
+            .enqueue(object : Callback<ResolveImageResponse> {
+
+                override fun onResponse(
+                    call: Call<ResolveImageResponse>,
+                    response: Response<ResolveImageResponse>
+                ) {
+                    if (response.isSuccessful && response.body() != null) {
+
+                        val id = response.body()!!.id
+                        spHelper.saveImageRecord(imagePath, id)
+
+                        holder.textViewRecordId.text = "ID:" + id.toString()
+                    } else {
+                        holder.textViewRecordId.text = "ID: NON CARICATO"
+                    }
+                }
+
+                override fun onFailure(call: Call<ResolveImageResponse>, t: Throwable) {
+                    holder.textViewRecordId.text = "—"
+                }
+            })
+    }
+
 }

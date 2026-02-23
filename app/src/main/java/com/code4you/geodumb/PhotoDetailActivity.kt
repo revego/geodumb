@@ -53,13 +53,19 @@ class PhotoDetailActivity : AppCompatActivity() {
             Log.d(TAG, "RetrofitClient già inizializzato")
         }
 
-        // CORREGGI: Cerca solo gli elementi che esistono nel NUOVO layout
+        // Recupera RecyclerView e TextView per lista vuota
         recyclerView = findViewById(R.id.recyclerView)
         textViewEmpty = findViewById(R.id.textViewEmpty)
 
-        // Recupera i dati passati dall'intent
+        // 1️⃣ Recupera il path della foto dall'Intent
         val photoPath = intent.getStringExtra("photo_path")
-        val date = intent.getStringExtra("date")
+        photoPath?.let {
+            Log.d(TAG, "Nuova foto da aggiungere: $it")
+            // Aggiungi la foto alla lista locale
+            ImageLogger.addImageToSentImages(this, it)
+        }
+
+        //val date = intent.getStringExtra("date")
         recordId = intent.getIntExtra("record_id", -1).takeIf { it != -1 }
 
         // Verifica se l'utente è autenticato
@@ -78,6 +84,9 @@ class PhotoDetailActivity : AppCompatActivity() {
         Log.d(TAG, "Facebook token presente: ${fbToken != null}")
         Log.d(TAG, "Record ID: $recordId")
 
+        //val localImages = ImageLogger.getSentImages(this).toMutableList()
+        //adapter.updateList(localImages)
+
         // INIZIALIZZA ADAPTER
         adapter = SentImagesAdapter(this, sentImagesList)
 
@@ -85,14 +94,42 @@ class PhotoDetailActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
-        // Configura il RecyclerView per immagini inviate
+        // 2️⃣ Configura RecyclerView con lista aggiornata
         setupRecyclerView()
 
-        // CONTROLLO AUTENTICAZIONE
+        // 3️⃣ Controlla autenticazione
         checkAuthentication()
 
-        // Log delle immagini inviate
-        ImageLogger.logSentImages(this)
+        // 4️⃣ Sincronizza con server
+        loadRifiutiFromServer()
+        //syncWithServer()
+    }
+
+    private fun loadRifiutiFromServer() {
+
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.apiService.getRifiuti()
+
+                if (response.isSuccessful) {
+
+                    val serverList = response.body() ?: emptyList()
+
+                    // Ordina per data decrescente (più recenti in alto)
+                    val sortedList = serverList.sortedByDescending { it.imageTime }
+
+                    adapter.updateList(sortedList)
+
+                    Log.d("SERVER", "Caricate ${sortedList.size} immagini")
+
+                } else {
+                    Log.e("SERVER", "Errore: ${response.code()}")
+                }
+
+            } catch (e: Exception) {
+                Log.e("SERVER", "Eccezione", e)
+            }
+        }
     }
 
     private fun checkAuthentication() {
@@ -120,9 +157,9 @@ class PhotoDetailActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Svuota e ricarica la lista
-        sentImagesList.clear()
-        sentImagesList.addAll(ImageLogger.getSentImages(this).sortedDescending())
+        // Svuota e ricarica la lista con immagini locali
+        //sentImagesList.clear()
+        //sentImagesList.addAll(ImageLogger.getSentImages(this).sortedDescending())
 
         //val sentImages = ImageLogger.getSentImages(this).sortedDescending().toMutableList()
 
@@ -201,7 +238,7 @@ class PhotoDetailActivity : AppCompatActivity() {
                             val newSentImages = ImageLogger.getSentImages(this@PhotoDetailActivity)
                                 .sortedDescending().toMutableList()
                             //updateList(newSentImages)
-                            updateAdapter()
+                            // updateAdapter()
 
                             // Torna alla schermata precedente
                             finish()
@@ -244,11 +281,11 @@ class PhotoDetailActivity : AppCompatActivity() {
         ImageLogger.removeImageFromSentImages(this, imagePath)
     }
 
-    private fun updateAdapter() {
-        val sentImages = ImageLogger.getSentImages(this@PhotoDetailActivity)
-            .sortedDescending().toMutableList()
-        adapter.updateList(sentImages)
-    }
+    //private fun updateAdapter() {
+    //    val sentImages = ImageLogger.getSentImages(this@PhotoDetailActivity)
+    //        .sortedDescending().toMutableList()
+    //    adapter.updateList(sentImages)
+    //}
 
     private fun handleDeleteError(errorMessage: String, recordId: Int) {
         Log.e(TAG, "Errore eliminazione record $recordId: $errorMessage")
