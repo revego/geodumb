@@ -1,5 +1,6 @@
 package com.code4you.geodumb
 
+//import com.facebook.BuildConfig
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -15,15 +16,19 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
+import androidx.lifecycle.lifecycleScope
+import com.code4you.geodumb.api.FacebookLoginRequest
+import com.code4you.geodumb.api.RetrofitClient
 import com.facebook.AccessToken
-//import com.facebook.BuildConfig
-import com.code4you.geodumb.BuildConfig
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
-import com.facebook.FacebookSdk
+import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.facebook.login.widget.LoginButton
+import kotlinx.coroutines.launch
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var callbackManager: CallbackManager
@@ -37,73 +42,96 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        // Inizializza l'SDK di Facebook
-        FacebookSdk.sdkInitialize(applicationContext)
+        // --------------------------------------------------
+        // NON SERVE PIÙ: FacebookSdk.sdkInitialize(applicationContext)
+        // L'SDK si inizializza automaticamente se hai configurato il manifest correttamente
+        // --------------------------------------------------
+
+        // Inizializza Retrofit (rimane invariato)
+        RetrofitClient.initialize(this)
+
+        // Inizializza CallbackManager (corretto e ancora valido in 16.x)
         callbackManager = CallbackManager.Factory.create()
 
-        callbackManager = CallbackManager.Factory.create()
-        loginButton = findViewById(R.id.facebook_login_button)
-        loginButton.setPermissions("email", "public_profile")
-
-        // 1. Trova le view
+        // Trova le view
         loginButton = findViewById(R.id.facebook_login_button)
         termsCheckbox = findViewById(R.id.terms_checkbox)
         legalText = findViewById(R.id.legal_text)
-
-        // ✅ AGGIUNGI QUESTA RIGA - Inizializza versionText
         versionText = findViewById(R.id.version_text)
 
-        // 2. Imposta il testo legale con i link cliccabili
+        // Imposta il testo legale e la versione
         setupLegalText()
-
-        // Imposta la versione
         setupVersionText()
 
-        // 3. Aggiungi il listener alla checkbox
+        // Listener checkbox (rimane invariato)
         termsCheckbox.setOnCheckedChangeListener { _, isChecked ->
             loginButton.isEnabled = isChecked
-            // Opzionale: cambia l'aspetto del pulsante per dare un feedback visivo
             loginButton.alpha = if (isChecked) 1.0f else 0.5f
         }
 
-        // 4. Imposta lo stato iniziale del pulsante (disabilitato)
+        // Stato iniziale pulsante
         loginButton.isEnabled = false
         loginButton.alpha = 0.5f
 
-        // Verifica se l'utente è già autenticato
-        if (AccessToken.getCurrentAccessToken() != null && !AccessToken.getCurrentAccessToken()?.isExpired!!) {
-            Log.d("FacebookLogin", "Utente già autenticato")
-            //AccessToken.getCurrentAccessToken()?.let { handleFacebookAccessToken(it) }
-            //handleFacebookAccessToken(AccessToken.getCurrentAccessToken())// Se non è loggato, reindirizza alla LoginActivity
-            goToLoginActivity()
+        //lifecycleScope.launch {
+        //    try {
+        //        val client = OkHttpClient()
+        //        val request = Request.Builder()
+        //            .url("https://api.citylog.cloud/")  // o "/" se hai aggiunto root
+        //            .build()
+        //        val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+        //        Log.d("DNS_TEST", "Code: ${response.code}, Body: ${response.body?.string()}")
+        //        Toast.makeText(this@LoginActivity, "Test: ${response.code}", Toast.LENGTH_LONG).show()
+        //    } catch (e: Exception) {
+        //        Log.e("DNS_TEST", "Fallito: ${e.message}", e)
+        //        Toast.makeText(this@LoginActivity, "Test fallito: ${e.message}", Toast.LENGTH_LONG).show()
+        //    }
+        //}
+
+        // Verifica se l'utente è già autenticato con Facebook
+        val currentAccessToken = AccessToken.getCurrentAccessToken()
+        if (currentAccessToken != null && !currentAccessToken.isExpired) {
+            Log.d("FacebookLogin", "Utente già autenticato con Facebook")
+            // Opzionale: tenta di usare il token esistente
+            handleFacebookAccessToken(currentAccessToken)
+            // Oppure vai direttamente alla MainActivity se preferisci
+            // goToMainActivity()
         } else {
-            // Configura il callback per il pulsante di login
+            // Configura il callback per il LoginButton
             loginButton.registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
                 override fun onSuccess(result: LoginResult) {
-                    // Handle successful login
-                    val accessToken = result.accessToken
-                    // Proceed with your app logic here
-                    handleFacebookAccessToken(result.accessToken)
+                    Log.d("FacebookLogin", "Login Facebook riuscito: $result")
+
+                    val accessToken = result.accessToken  // Usa direttamente quello del risultato (più affidabile)
+                    // Oppure: val accessToken = AccessToken.getCurrentAccessToken()
+
+                    Log.d("FacebookLogin", "Token: ${accessToken?.token}")
+                    Log.d("FacebookLogin", "User ID: ${accessToken?.userId}")
+                    Log.d("FacebookLogin", "Scadenza: ${accessToken?.expires}")
+
+                    if (accessToken == null || accessToken.isExpired) {
+                        Toast.makeText(this@LoginActivity, "Token Facebook non valido o scaduto", Toast.LENGTH_SHORT).show()
+                        LoginManager.getInstance().logOut()
+                        loginButton.performClick() // Ri-prova login
+                    } else {
+                        handleFacebookAccessToken(accessToken)
+                    }
                 }
 
                 override fun onCancel() {
-                    // Handle login cancellation
                     Toast.makeText(this@LoginActivity, "Login annullato", Toast.LENGTH_SHORT).show()
                     Log.d("FacebookLogin", "Login annullato dall'utente")
                 }
 
                 override fun onError(error: FacebookException) {
-                    // Handle login errors
-                    Toast.makeText(
-                        this@LoginActivity,
-                        "Errore di login: ${error.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    Log.e("FacebookLogin", "Errore durante il login", error)
+                    Toast.makeText(this@LoginActivity, "Errore login Facebook: ${error.message}", Toast.LENGTH_LONG).show()
+                    Log.e("FacebookLogin", "Errore durante login Facebook", error)
                 }
             })
         }
     }
+
+
     private fun setupLegalText() {
         // Prendi il testo HTML da strings.xml
         val fullText = getString(R.string.legal_acceptance_text)
@@ -165,18 +193,186 @@ class LoginActivity : AppCompatActivity() {
         // versionText.text = "v$versionName ($versionCode)"
     }
 
+    // Aggiungi questa funzione per inviare il token al tuo backend
     private fun handleFacebookAccessToken(token: AccessToken?) {
+        if (token != null) {
+            Log.d("FacebookLogin", "Token Facebook ricevuto: ${token.token}")
+
+            // SALVA IMMEDIATAMENTE il token in una variabile locale
+            val facebookToken = token.token
+
+            // Verifica che non sia il placeholder
+            if (facebookToken == "ACCESS_TOKEN_REMOVED") {
+                Toast.makeText(this, "Errore: token non disponibile", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // MOSTRA loading
+            showLoading(true)
+
+            lifecycleScope.launch {
+                try {
+                    Log.d("FacebookLogin", "Usando token: ${facebookToken.take(20)}...")
+
+                    // Invia il token al TUO backend
+                    val result = RetrofitClient.apiService.facebookLogin(
+                        FacebookLoginRequest(facebookToken)
+                    )
+
+                    if (result.isSuccessful) {
+                        val loginResponse = result.body()
+                        if (loginResponse != null) {
+                            // SALVA il JWT token nelle SharedPreferences
+                            RetrofitClient.updateAuthToken(loginResponse.accessToken)
+
+                            // Log
+                            Log.d("FacebookLogin", "JWT Token salvato: ${loginResponse.accessToken}")
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "Login effettuato con successo",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            // Vai alla MainActivity
+                            goToMainActivity()
+                        } else {
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "Errore: risposta vuota dal server",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    } else {
+                        val errorMsg = result.errorBody()?.string() ?: "Errore sconosciuto"
+                        Toast.makeText(
+                            this@LoginActivity,
+                            "Login fallito: $errorMsg",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        Log.e("FacebookLogin", "Errore backend: $errorMsg")
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Errore di rete: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    Log.e("FacebookLogin", "Fallita chiamata backend", e)
+                    if (e is retrofit2.HttpException) {
+                        val errorBody = e.response()?.errorBody()?.string()
+                        Log.e("FacebookLogin", "Response body 500: $errorBody")
+                        Toast.makeText(this@LoginActivity,
+                            "Errore server: $errorBody",
+                            Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(this@LoginActivity,
+                            "Errore rete: ${e.message}",
+                            Toast.LENGTH_LONG).show()
+                    }
+
+                    // AGGIUNGI QUESTO FALLBACK:
+                    Log.w("FacebookLogin", "Fallback a Facebook-only mode")
+
+                    //val fakeJWT = "fake_jwt_${System.currentTimeMillis()}_${token?.userId ?: "unknown"}"
+                    //RetrofitClient.updateAuthToken(fakeJWT)
+
+                    //val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                    //prefs.edit().apply {
+                    //    putString("auth_token", fakeJWT)
+                    //    token?.let {
+                    //        putString("fb_token_raw", it.token)
+                    //        putString("fb_user_id", it.userId)
+                    //    }
+                    //    putBoolean("facebook_only_mode", true)
+                    //    apply()
+                    //}
+                    Log.e("FacebookLogin", "Network error", e)
+                } finally {
+                    showLoading(false)
+                }
+            }
+        } else {
+            Toast.makeText(this, "Token Facebook nullo", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Aggiungi funzione per mostrare/loading
+    private fun showLoading(show: Boolean) {
+        loginButton.isEnabled = !show
+        loginButton.text = if (show) "Autenticazione..." else "Continua con Facebook"
+    }
+    private fun handleFacebookAccessToken___(token: AccessToken?) {
         // Qui puoi utilizzare il token per autenticare l'utente nel tuo backend
+        if (token == null) {
+            Toast.makeText(this, "Errore: token Facebook nullo", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         if (token != null) {
             Log.d("FacebookLogin", "Token ricevuto: ${token.token}")
+
+            // PER ORA: usa sempre fallback (commenta dopo)
+            val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+            val fakeJWT = "fake_jwt_${System.currentTimeMillis()}_${token.userId}"
+
+            prefs.edit().apply {
+                putString("fb_token_raw", token.token)
+                putString("fb_user_id", token.userId)
+                putString("auth_token", fakeJWT)
+                putBoolean("facebook_only_mode", true)
+                apply()
+            }
+
+            // Aggiorna RetrofitClient
+            RetrofitClient.updateAuthToken(fakeJWT)
+
+            // IMPORTANTE: Salva anche la scadenza del token Facebook
+            prefs.edit().putLong("fb_token_expiry", token.expires.time).apply()
+
+            // Log di debug
+            Log.d("FacebookLogin", "✅ Fake JWT creato: ${fakeJWT.take(20)}...")
+            Log.d("FacebookLogin", "FB Token salvato: ${token.token.take(10)}...")
+
+            Toast.makeText(this, "Login completato (TEST MODE)", Toast.LENGTH_SHORT).show()
+
+            goToMainActivity()
         }
-        Toast.makeText(this, "Login effettuato con successo", Toast.LENGTH_SHORT).show()
+    }
 
-        // Continua con l'attività principale dell'app, se necessario
-        //startActivity(Intent(this, MainActivity::class.java))
-        //finish()
+    @OptIn(ExperimentalEncodingApi::class)
+    private fun handleFacebookAccessToken__bad(token: AccessToken?) {
+        if (token == null) {
+            Toast.makeText(this, "Errore: token Facebook nullo", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        // Avvia l'attività principale
+        Log.d("FacebookLogin", "Token Facebook ricevuto: ${token.token}")
+
+        // Usa kotlin.io.encoding.Base64
+        val header = Base64.UrlSafe.encode(
+            """{"alg":"HS256","typ":"JWT"}""".toByteArray()
+        ).trimEnd('=')
+
+        val payload = Base64.UrlSafe.encode(
+            """{"sub":"${token.userId}","name":"Facebook User","iat":${System.currentTimeMillis() / 1000}}""".toByteArray()
+        ).trimEnd('=')
+
+        val signature = Base64.UrlSafe.encode(
+            """{"test":"signature"}""".toByteArray()
+        ).trimEnd('=')
+
+        val validJWT = "$header.$payload.$signature"
+
+        // Salva il token
+        val sharedPreferencesHelper = SharedPreferencesHelper(this)
+
+        sharedPreferencesHelper.saveAuthToken(validJWT)
+
+        // Aggiorna RetrofitClient
+        RetrofitClient.updateAuthToken(validJWT)
+
+        Toast.makeText(this, "Login completato", Toast.LENGTH_SHORT).show()
         goToMainActivity()
     }
 
@@ -217,8 +413,8 @@ class LoginActivity : AppCompatActivity() {
         // startActivity(intent)
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://citylog.cloud/termini"))
         startActivity(intent)
+        }
     }
-}
 
 
 

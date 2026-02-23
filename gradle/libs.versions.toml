@@ -26,6 +26,8 @@ roomCommon = "2.6.1"
 roomCommonJvm = "2.7.0-alpha04"
 roomKtx = "2.6.1"
 cronetEmbedded = "119.6045.31"
+cameraView = "1.5.1"
+googleMaterialVersion = "1.13.0"
 
 [libraries]
 androidx-constraintlayout-v204 = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayoutVersion" }
@@ -54,6 +56,8 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 cronet-embedded = { group = "org.chromium.net", name = "cronet-embedded", version.ref = "cronetEmbedded" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+google-material = { group = "com.google.android.material", name = "material", version.ref = "googleMaterialVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 
 object Retrofit {
-    private val BASE_URL = "https://retrofit.citylog.cloud/"
+    private val BASE_URL = "https://api.citylog.cloud/"
 
     val retrofitInstance: Retrofit by lazy {
         val okHttpClient = OkHttpClient.Builder().build()

@@ -1,11 +1,8 @@
 package com.code4you.geodumb
 
-//import MapsActivity
-
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -22,6 +19,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -31,17 +29,21 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.exifinterface.media.ExifInterface
+import androidx.lifecycle.lifecycleScope
+import com.code4you.geodumb.api.FacebookLoginRequest
+import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.databinding.ActivityMainBinding
 import com.facebook.AccessToken
 import com.facebook.GraphRequest
 import com.facebook.login.LoginManager
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -50,15 +52,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-
 class MainActivity : AppCompatActivity(), LocationListener {
 
     private var latitude: Double? = null
     private var longitude: Double? = null
     private val SENT_IMAGES_PREF = "SentImagesPref"
     private val SENT_IMAGES_KEY = "SentImages"
-
-    private val STATIC_LOCATION = LatLng(37.7749, -122.4194) // San Francisco
+    private val TAG = "MainActivity"
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var locationManager: LocationManager
@@ -66,38 +66,247 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private lateinit var sendEmailButton: Button
     private lateinit var imageView: ImageView
     private var photoUri: Uri? = null
+    private var currentPhotoPath: String? = null
 
     companion object {
-        private const val STATIC_LOCATION = 3
         private const val REQUEST_PERMISSIONS = 2
         private const val REQUEST_IMAGE_CAPTURE = 1
-        //private const val REQUEST_CAMERA_PERMISSION = 100
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Inizializza RetrofitClient
+        try {
+            RetrofitClient.initialize(this)
+        } catch (e: Exception) {
+            Log.d(TAG, "RetrofitClient già inizializzato")
+        }
+
+        // VERIFICA AUTENTICAZIONE CON DUE STRATEGIE
+        if (!checkAuthentication()) {
+            // Non autenticato, vai a LoginActivity
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return  // Esci, non proseguire con onCreate
+        }
+
+        // SE ARRIVI QUI → UTENTE AUTENTICATO
+        setupToolbarAndProfile()
+        initializeViews()
+        setupBottomNavigation()
+        //show AccessToken
+        showTokenInfo()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateSentImagesCount()
+    }
+
+    private fun updateSentImagesCount() {
+        val sentImagesCount = ImageLogger.getSentImages(this).size
+        val tvCount = findViewById<TextView>(R.id.txt_images_sent)
+        tvCount.text = "$sentImagesCount"
+    }
+
+    private fun checkAuthentication(): Boolean {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val fbToken = AccessToken.getCurrentAccessToken()
+
+        Log.d(TAG, "=== CHECK AUTHENTICATION ===")
+        Log.d(TAG, "Facebook token presente: ${fbToken != null}")
+        Log.d(TAG, "Facebook token expired: ${fbToken?.isExpired}")
+
+        // 1. Controlla se abbiamo JWT valido (backend)
+        val jwtToken = prefs.getString("auth_token", null)
+        val isJwtValid = jwtToken != null && !jwtToken.startsWith("fake_jwt")
+
+        if (isJwtValid) {
+            Log.d(TAG, "✅ Autenticato con JWT backend")
+            return true
+        }
+
+        // 2. Controlla se abbiamo token Facebook
+        if (fbToken != null && !fbToken.isExpired) {
+            Log.d(TAG, "✅ Autenticato con Facebook (fallback)")
+
+            // Tentativo di rinnovare il JWT con Facebook token
+            // Ma NON restituire true finché non abbiamo JWT valido
+            //attemptBackendAuthWithFacebookToken(fbToken)
+
+            // Se siamo in modalità fallback (facebook_only_mode), permetto l'accesso
+            val isFacebookOnlyMode = prefs.getBoolean("facebook_only_mode", false)
+            if (isFacebookOnlyMode) {
+                Log.d(TAG, "✅ Autenticato in modalità Facebook-only (fallback)")
+                return true
+            }
+
+            // Salva token Facebook per uso futuro
+            //saveFacebookToken(fbToken)
+
+            // Prova a ottenere JWT dal backend (in background)
+            //attemptBackendAuthWithFacebookToken(fbToken)
+            Log.d(TAG, "❌ JWT non valido e non in modalità Facebook-only")
+            return false
+        }
+
+        // 3. Non autenticato
+        Log.d(TAG, "❌ Non autenticato")
+        return false
+    }
+
+    private fun showTokenInfo() {
+        val tokenTextView = findViewById<TextView>(R.id.txt_token_info)
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+
+        val jwtToken = prefs.getString("auth_token", null)
+        val fbToken = prefs.getString("fb_token_raw", null)
+
+        when {
+            jwtToken != null && !jwtToken.startsWith("fake_jwt") -> {
+                tokenTextView.text = "🔐 Backend JWT: ${jwtToken.take(8)}..."
+                tokenTextView.visibility = View.VISIBLE
+            }
+            fbToken != null -> {
+                tokenTextView.text = "📱 FB Token: ${fbToken.take(8)}..."
+                tokenTextView.visibility = View.VISIBLE
+            }
+            else -> {
+                tokenTextView.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun saveFacebookToken(token: AccessToken) {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        prefs.edit().apply {
+            putString("fb_token_raw", token.token)
+            putString("fb_user_id", token.userId)
+            putLong("fb_token_expiry", token.expires.time)
+            putBoolean("facebook_only_mode", true)  // Modalità fallback
+            apply()
+        }
+        Log.d(TAG, "Facebook token salvato per user: ${token.userId}")
+    }
+
+    private fun attemptBackendAuthWithFacebookToken(token: AccessToken) {
+        // Controlla immediatamente se il token è valido
+        val facebookToken = token.token
+        if (facebookToken == "ACCESS_TOKEN_REMOVED") {
+            Log.w(TAG, "Token Facebook non disponibile per autenticazione backend")
+            return
+        }
+
+        Log.d(TAG, "Tentativo autenticazione backend con token Facebook: ${facebookToken.take(20)}...")
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.apiService.facebookLogin(
+                    FacebookLoginRequest(facebookToken)
+                )
+
+                if (response.isSuccessful) {
+                    val loginResponse = response.body()
+                    loginResponse?.let {
+                        // Aggiorna SharedPreferences
+                        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                        prefs.edit().apply {
+                            putString("auth_token", it.accessToken)
+                            putBoolean("facebook_only_mode", false)
+                            apply()
+                        }
+
+                        // Aggiorna RetrofitClient sul thread main
+                        withContext(Dispatchers.Main) {
+                            RetrofitClient.updateAuthToken(it.accessToken)
+                            Log.d(TAG, "✅ Backend auth completata. JWT: ${it.accessToken.take(30)}...")
+
+                            // Notifica l'Activity che ora abbiamo un JWT valido
+                            showToastOnMainThread("Aggiornamento credenziali completato")
+                        }
+                    }
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Errore ${response.code()}"
+                    Log.w(TAG, "Backend auth fallita: $errorMsg")
+
+                    // Non è un errore grave, rimaniamo in modalità Facebook-only
+                    withContext(Dispatchers.Main) {
+                        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                        prefs.edit().putBoolean("facebook_only_mode", true).apply()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Errore durante autenticazione backend", e)
+
+                // Network error o backend down - rimaniamo in modalità Facebook-only
+                withContext(Dispatchers.Main) {
+                    val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().putBoolean("facebook_only_mode", true).apply()
+                }
+            }
+        }
+    }
+
+    private fun showToastOnMainThread(message: String) {
+        runOnUiThread {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+    private fun attemptBackendAuthWithFacebookToken_(token: AccessToken) {
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Tentativo autenticazione backend con token Facebook")
+
+                val response = RetrofitClient.apiService.facebookLogin(
+                    FacebookLoginRequest(token.token)
+                )
+
+                if (response.isSuccessful) {
+                    val loginResponse = response.body()
+                    loginResponse?.let {
+                        // ✅ Backend supporta Facebook login
+                        RetrofitClient.updateAuthToken(it.accessToken)
+
+                        // Aggiorna SharedPreferences
+                        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                        prefs.edit().apply {
+                            putString("auth_token", it.accessToken)
+                            putBoolean("facebook_only_mode", false)  // Ora abbiamo JWT
+                            apply()
+                        }
+
+                        Log.d(TAG, "✅ Backend auth completata per user: ${it.userId}")
+                    }
+                } else {
+                    // Backend non supporta o errore
+                    Log.d(TAG, "Backend auth fallita: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                // Network error o backend down - modalità Facebook-only
+                Log.d(TAG, "Backend non disponibile, modalità Facebook-only")
+            }
+        }
+    }
+
+    private fun setupToolbarAndProfile() {
         // Imposta il Toolbar come ActionBar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
         // Mostra l'immagine del profilo utente se connesso
         showFacebookProfilePicture()
+    }
 
-        // Verifica se l'utente è già autenticato
-        if (AccessToken.getCurrentAccessToken() == null) {
-            // Utente non autenticato, reindirizzalo alla LoginActivity
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish() // Chiudi la MainActivity finché l'utente non è autenticato
-        }
+    private fun initializeViews() {
         takePhotoButton = findViewById(R.id.btn_take_photo)
         sendEmailButton = findViewById(R.id.btn_send_email)
         imageView = findViewById(R.id.img_photo)
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         takePhotoButton.setOnClickListener {
-            Log.d("MainActivity", "Take Photo button clicked")
+            Log.d(TAG, "Take Photo button clicked")
             if (checkPermissions()) {
                 getLastKnownLocation()
                 takePhoto()
@@ -105,21 +314,21 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 requestPermissions()
             }
         }
+    }
+
+    private fun setupBottomNavigation() {
         val navView: BottomNavigationView = findViewById(R.id.bottom_navigation)
         navView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_home -> {
                     // Avvia la DescriptionActivity quando viene selezionato "Home"
-                    val intent = Intent(
-                        this, DescriptionActivity::class.java
-                    )
+                    val intent = Intent(this, DescriptionActivity::class.java)
                     startActivity(intent)
-                    //Toast.makeText(this, "GeoDumb: Gestisci e visualizza segnalazioni geografiche con immagini", Toast.LENGTH_SHORT).show();
                     true
                 }
                 R.id.navigation_dashboard -> {
                     // Handle Dashboard navigation
-                    Log.d(TAG, "Map selected")
+                    Log.d(TAG, "Dashboard selected")
                     try {
                         val intent = Intent(this, PhotoDetailActivity::class.java)
                         startActivity(intent)
@@ -141,23 +350,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 else -> false
             }
         }
-
-        //sendEmailButton.setOnClickListener {
-        //    photoUri?.let { uri ->
-        //        val latitude = getLatitudeFromUri(uri)
-        //        val longitude = getLongitudeFromUri(uri)
-        //        val cityName = getCityName(latitude, longitude)
-        //        val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in $cityName"
-        //        //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
-        //        sendEmail(uri, message)
-        //        addImageToSentList(uri.toString())
-        //        Toast.makeText(this, "Photo taken successfully", Toast.LENGTH_SHORT).show()
-        //        logSentImages() // Log delle immagini inviate
-        //    } ?: Toast.makeText(this, "No photo to send", Toast.LENGTH_SHORT).show()
-        //}
-        // Log delle immagini inviate durante la creazione dell'attività
-        //logSentImages()
-        ImageLogger.logSentImages(this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -167,55 +359,48 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            // --- QUESTA È LA MODIFICA CHIAVE ---
-            R.id.action_profile_menu -> { // Assumendo che questo sia l'ID del sottomenù/item
+            R.id.action_profile_menu -> {
                 // Non fa nulla, serve solo ad aprire il sottomenù
                 true
             }
             R.id.action_profile -> {
                 val intent = Intent(this, FragmentContainerActivity::class.java)
-                intent.putExtra("FRAGMENT_NAME", "PROFILE") // Diciamo all'Activity di caricare il ProfileFragment
+                intent.putExtra("FRAGMENT_NAME", "PROFILE")
                 startActivity(intent)
                 true
             }
-            // Gestisce il click sulla voce "I miei luoghi"
             R.id.action_my_places -> {
                 val intent = Intent(this, FragmentContainerActivity::class.java)
-                intent.putExtra("FRAGMENT_NAME", "MY_PLACES") // Dice all'Activity di caricare il MyPlacesFragment
+                intent.putExtra("FRAGMENT_NAME", "MY_PLACES")
                 startActivity(intent)
-                true // Indica che l'evento è stato gestito
+                true
             }
-            // Aggiungi qui altri casi per le altre voci di menù
-            // R.id.action_settings -> { ... intent.putExtra("FRAGMENT_NAME", "SETTINGS") ... }
-
             R.id.action_logout -> {
                 logoutFacebook()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
-
-        //return when (item.itemId) {
-        //    R.id.action_logout -> {
-                // Effettua il logout da Facebook
-        //        logoutFacebook()
-        //        true
-        //    }
-        //    else -> super.onOptionsItemSelected(item)
-        //}
     }
 
     fun logoutFacebook() {
         // Logout da Facebook
         LoginManager.getInstance().logOut()
-        Log.d("FacebookLogin", "Utente disconnesso")
+
+        // Pulisci SharedPreferences
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        prefs.edit().clear().apply()
+
+        // Pulisci Retrofit
+        RetrofitClient.logout()
+
+        Log.d(TAG, "Utente disconnesso")
 
         // Torna alla LoginActivity
         val intent = Intent(this, LoginActivity::class.java)
         startActivity(intent)
-        finish() // Chiudi la MainActivity
+        finish()
     }
-
 
     private fun getLastKnownLocation() {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
@@ -224,65 +409,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
             val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             latitude = location?.latitude
             longitude = location?.longitude
-        }
-    }
-
-    private fun getLocationAndStartCamera() {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
-        }
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
-                location?.let {
-                    // Salva le coordinate GPS nella variabile location
-                    val latitude = location.latitude
-                    val longitude = location.longitude
-                    Log.d("MainActivity", "Latitude: $latitude, Longitude: $longitude")
-
-                    // Avvia l'intento della fotocamera
-                    startCameraIntent()
-                } ?: run {
-                    Toast.makeText(this, "Unable to retrieve location", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("MainActivity", "Error getting location: ${e.message}", e)
-                Toast.makeText(this, "Error getting location: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun startCameraIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (takePictureIntent.resolveActivity(packageManager) != null) {
-            val photoFile: File? = try {
-                createImageFile()
-            } catch (ex: IOException) {
-                null
-            }
-            photoFile?.also {
-                photoUri = FileProvider.getUriForFile(
-                    this,
-                    "com.code4you.geodumb.provider",
-                    it
-                )
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
-            }
         }
     }
 
@@ -303,31 +429,31 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun takePhoto() {
-        // Request location updates to get current location
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
         }
 
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        Log.d("MainActivity", "Preparing to take photo")
-        // Rimuovi temporaneamente il controllo resolveActivity per debugging
+        Log.d(TAG, "Preparing to take photo")
+
         val photoFile: File? = try {
             createImageFile()
         } catch (ex: IOException) {
-            Log.e("MainActivity", "Error occurred while creating the file", ex)
+            Log.e(TAG, "Error occurred while creating the file", ex)
             null
         }
+
         photoFile?.also {
             photoUri = FileProvider.getUriForFile(
                 this,
                 "com.code4you.geodumb.provider",
                 it
             )
-            Log.d("MainActivity", "Photo URI: $photoUri")
+            Log.d(TAG, "Photo URI: $photoUri")
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
             this.startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
         } ?: run {
-            Log.e("MainActivity", "Photo file is null")
+            Log.e(TAG, "Photo file is null")
         }
     }
 
@@ -336,7 +462,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
 
-        // Ottieni i dati di geolocalizzazione
+        // Ottieni dati di geolocalizzazione
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
@@ -345,12 +471,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val latitude = location?.latitude ?: 0.0
         val longitude = location?.longitude ?: 0.0
 
-        // Ottieni l'indirizzo e la città usando Geocoder
+        // Ottieni indirizzo e città
         val geoCoder = Geocoder(this, Locale.getDefault())
         val addresses = try {
             geoCoder.getFromLocation(latitude, longitude, 1)
         } catch (e: IOException) {
-            Log.e("MainActivity", "Geocoder failed", e)
+            Log.e(TAG, "Geocoder failed", e)
             null
         }
 
@@ -358,27 +484,13 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val address = foundAddress?.getAddressLine(0) ?: "Unknown_Address"
         val city = foundAddress?.locality ?: "Unknown_City"
 
-        // Pulisci l'indirizzo e la città per usarli nel nome del file
+        // Pulisci per nome file
         val cleanAddress = address.replace("\\s+".toRegex(), "_").replace("[^a-zA-Z0-9_]".toRegex(), "")
         val cleanCity = city.replace("\\s+".toRegex(), "_").replace("[^a-zA-Z0-9_]".toRegex(), "")
 
         val fileName = "JPEG_${timeStamp}_${cleanCity}_${cleanAddress}_${latitude}_${longitude}.jpg"
 
         return File(storageDir, fileName).apply {
-            currentPhotoPath = absolutePath
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun createImageFile_(): File {
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-
-        return File.createTempFile(
-            "JPEG_${timeStamp}_",
-            ".jpg",
-            storageDir
-        ).apply {
             currentPhotoPath = absolutePath
         }
     }
@@ -394,8 +506,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
-    private var currentPhotoPath: String? = null
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -403,17 +513,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
             photoUri?.let { uri ->
                 val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
                 if (bitmap != null) {
-                    val resizedBitmap = resizeBitmap(bitmap, 800, 800) // Resize to 800x800 or any other size
+                    val resizedBitmap = resizeBitmap(bitmap, 800, 800)
                     val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
                     imageView.setImageURI(Uri.fromFile(compressedFile))
                     val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
-                    Log.d("MainActivity", message)
-                    // Imposta il listener per il bottone sendEmailButton con il messaggio
+                    Log.d(TAG, message)
+
                     sendEmailButton.setOnClickListener {
-                        sendEmail(uri, message)
+                        sendEmail(uri, message, AccessToken.getCurrentAccessToken())
                     }
                 } else {
-                    Log.e("MainActivity", "Bitmap is null, cannot process image")
+                    Log.e(TAG, "Bitmap is null, cannot process image")
                     Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -437,47 +547,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private fun compressBitmap(bitmap: Bitmap, filePath: String): File {
         val file = File(filePath)
         val fos = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, fos) // Adjust quality as needed
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, fos)
         fos.flush()
         fos.close()
         return file
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun getCurrentLocation(): Location? {
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val providers = locationManager.getProviders(true)
-        var bestLocation: Location? = null
-        for (provider in providers) {
-            val l = locationManager.getLastKnownLocation(provider) ?: continue
-            if (bestLocation == null || l.accuracy < bestLocation.accuracy) {
-                bestLocation = l
-            }
-        }
-        return bestLocation
-    }
-
-    private fun addGpsMetadata(photoUri: Uri, location: Location) {
-        try {
-            val exif = contentResolver.openInputStream(photoUri)?.let { ExifInterface(it) }
-            exif?.setGpsInfo(location)
-            exif?.saveAttributes()
-        } catch (e: IOException) {
-            Log.e("MainActivity", "Error adding GPS metadata", e)
-        }
-    }
-
-    private fun getCoordinates(photoUri: Uri): String {
-        val inputStream = contentResolver.openInputStream(photoUri)
-        inputStream?.use { stream ->
-            val exifInterface = ExifInterface(stream)
-            val latitude = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE)
-            val longitude = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE)
-
-            // Convert latitude and longitude to readable format
-            return "Latitude: $latitude, Longitude: $longitude"
-        }
-        return "Coordinates not found"
     }
 
     private fun getCityName(latitude: Double?, longitude: Double?): String {
@@ -491,7 +564,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 "City name not available"
             }
         } catch (e: IOException) {
-            Log.e("MainActivity", "Geocoder failed to get city name", e)
+            Log.e(TAG, "Geocoder failed to get city name", e)
             "City name not available"
         }
     }
@@ -502,38 +575,35 @@ class MainActivity : AppCompatActivity(), LocationListener {
         locationManager.removeUpdates(this)
     }
 
-    private fun sendEmail(photoUri: Uri, message: String) {
+    @SuppressLint("StringFormatInvalid")
+    private fun sendEmail(photoUri: Uri, message: String, token: AccessToken?) {
         val emailIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
             putExtra(Intent.EXTRA_EMAIL, arrayOf("report@citylog.cloud"))
             putExtra(Intent.EXTRA_SUBJECT, "Report from GeoDumb")
-            //putExtra(Intent.EXTRA_TEXT, message)
             putExtra(Intent.EXTRA_STREAM, photoUri)
 
-            // Aggiungi il messaggio principale con le coordinate e il nome della città
+            val userId = token?.userId ?: "UNKNOWN"
+
             val address = latitude?.let { lat ->
                 longitude?.let { lon ->
                     getAddress(lat, lon)
                 }
             } ?: "Address not available"
 
-            // Ottieni la data e l'ora correnti
-            val currentDateTime =
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-            // Generazione unico ID
+            val currentDateTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
             val uniqueID = UUID.randomUUID().toString()
-            // vecchio messaggio
-            val message2 = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)} at $address"
-            // Aggiungi un'immagine statica della mappa basata sulle coordinate da OpenStreetMap Static Maps
-            // Now i use a personal server openstreetmap
+
             val (x, y) = latLonToTile(latitude, longitude, 15)
             val mapUrl = "https://maps.citylog.cloud/hot/15/$x/$y.png?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
-            //val mapUrl = "Map description:  https://static-maps.yandex.ru/1.x/?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
-            val message = """
+
+            val fullMessage = """
             **Description Audit:**
             Here is the photo taken at the following location:
 
             - **ImageID:** $uniqueID
+            - **UserID:** $userId
+            
             - **Coordinates:**
               - Latitude: $latitude
               - Longitude: $longitude
@@ -544,77 +614,35 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
             **Map Citylog Preview:**
             $mapUrl
-
+            
             - **Warning Transmission Image:**
               - ImageID: $uniqueID
               - FocusImage:
             """.trimIndent()
 
-            // Creazione del messaggio formattato in HTML
-            val formattedMessage = """
-            <html>
-            <body>
-            <p><strong>Description Audit:</strong></p>
-            <p>Here is the photo taken at the following location:</p>
-            <ul>
-                <li><strong>ImageID:</strong> $uniqueID</li>
-                <li><strong>Coordinates:</strong>
-                    <ul>
-                        <li>Latitude: $latitude</li>
-                        <li>Longitude: $longitude</li>
-                    </ul>
-                </li>
-                <li><strong>City:</strong> ${getCityName(latitude, longitude)}</li>
-                <li><strong>Address:</strong> $address</li>
-                <li><strong>DateTime:</strong> $currentDateTime</li>
-            </ul>
-            <p><strong>Map Citylog Preview:</strong></p>
-            <p><a href="$mapUrl">View Map</a></p>
-            </body>
-            </html>
-            """.trimIndent()
-
-            // Invia l'email con il messaggio HTML
-            //putExtra(Intent.EXTRA_TEXT, Html.fromHtml(formattedMessage))
-            //putExtra(Intent.EXTRA_STREAM, mapUrl)
-
-            putExtra(Intent.EXTRA_TEXT, "\n$message")
-            //putExtra(Intent.EXTRA_TEXT, "\n$message\n\n$mapUrl")
+            putExtra(Intent.EXTRA_TEXT, "\n$fullMessage")
         }
 
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
-            Log.d("MainActivity", "Email sent with photo URI: $photoUri")
+            Log.d(TAG, "Email sent with photo URI: $photoUri")
 
-            // log Images
+            // Log Images
             addImageToSentList(photoUri.toString())
             ImageLogger.logSentImages(this)
-            //logSentImages()
         }
     }
 
     private fun latLonToTile(lat: Double?, lon: Double?, zoom: Int): Pair<Int, Int> {
-        if (lat == null || lon == null) return Pair(0,0)
+        if (lat == null || lon == null) return Pair(0, 0)
         val x = Math.floor((lon + 180) / 360 * Math.pow(2.0, zoom.toDouble())).toInt()
         val y = Math.floor((1 - Math.log(Math.tan(Math.toRadians(lat)) + 1 / Math.cos(Math.toRadians(lat))) / Math.PI) / 2 * Math.pow(2.0, zoom.toDouble())).toInt()
         return Pair(x, y)
     }
 
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-
     override fun onProviderEnabled(provider: String) {}
-
     override fun onProviderDisabled(provider: String) {}
-
-    private fun getLatitudeFromUri(uri: Uri): Double {
-        val exifInterface = androidx.exifinterface.media.ExifInterface(uri.path!!)
-        return exifInterface.latLong?.get(0) ?: 0.0
-    }
-
-    private fun getLongitudeFromUri(uri: Uri): Double {
-        val exifInterface = androidx.exifinterface.media.ExifInterface(uri.path!!)
-        return exifInterface.latLong?.get(1) ?: 0.0
-    }
 
     private fun addImageToSentList(imagePath: String) {
         val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
@@ -632,42 +660,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         editor.apply()
     }
 
-    private fun addImageToSentList_(imageUri: String) {
-        val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-
-        val existingImages = sharedPreferences.getStringSet(SENT_IMAGES_KEY, mutableSetOf())
-        existingImages?.add(imageUri)
-
-        editor.putStringSet(SENT_IMAGES_KEY, existingImages)
-        editor.apply()
-    }
-
-    private fun getSentImages(): List<String> {
-        val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
-        val existingImages = sharedPreferences.getString(SENT_IMAGES_KEY, null)
-        return if (existingImages != null) {
-            Gson().fromJson(existingImages, object : TypeToken<List<String>>() {}.type)
-        } else {
-            listOf()
-        }
-    }
-
-    private fun getSentImagesList(): Set<String> {
-        val sharedPreferences = getSharedPreferences(SENT_IMAGES_PREF, Context.MODE_PRIVATE)
-        return sharedPreferences.getStringSet(SENT_IMAGES_KEY, mutableSetOf()) ?: mutableSetOf()
-    }
-
-    private fun logSentImages() {
-        //val sentImages = getSentImagesList()
-        val sentImages = getSentImages()
-        for (imageUri in sentImages) {
-            Log.d("MainActivity", "Sent Image URI: $imageUri")
-            Toast.makeText(this, "Sent Image URI", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // Funzione per ottenere l'indirizzo completo utilizzando le coordinate
     private fun getAddress(latitude: Double, longitude: Double): String {
         val geoCoder = Geocoder(this, Locale.getDefault())
         return try {
@@ -678,7 +670,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 "Address not available"
             }
         } catch (e: IOException) {
-            Log.e("MainActivity", "Geocoder failed to get address", e)
+            Log.e(TAG, "Geocoder failed to get address", e)
             "Address not available"
         }
     }
@@ -690,12 +682,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 accessToken
             ) { jsonObject, _ ->
                 if (jsonObject != null) {
-                    // Recupera il nome utente e l'URL dell'immagine
                     val name = jsonObject.optString("name", "User")
                     val pictureData = jsonObject.optJSONObject("picture")?.optJSONObject("data")
                     val imageUrl = pictureData?.optString("url") ?: "default_image_url"
 
-                    // Aggiorna UI
                     val imageView = findViewById<ImageView>(R.id.img_account)
                     val textView = findViewById<TextView>(R.id.txt_username)
 
@@ -708,28 +698,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 }
             }
 
-            // Specifica i campi da ottenere
             val parameters = Bundle()
             parameters.putString("fields", "id,name,picture.type(large)")
             request.parameters = parameters
             request.executeAsync()
-        }
-    }
-
-    private fun showFacebookProfilePicture_() {
-        val accessToken = AccessToken.getCurrentAccessToken()
-        if (accessToken != null && !accessToken.isExpired) {
-            val userId = accessToken.userId
-            val profileImageUrl = "https://graph.facebook.com/$userId/picture?type=large"
-            Log.d("Facebook", "User ID: ${accessToken.userId}")
-
-            val imageUrl = "https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122125786802528933&height=200&width=200&ext=1736176184&hash=AbZW6Wlgz0NcAKKeizcr_9t7"
-            val imageView = findViewById<ImageView>(R.id.img_account) // Assicurati che l'ID corrisponda
-            //Picasso.get().load(profileImageUrl).into(imageView)
-            Picasso.get()
-                .load(imageUrl)
-                .error(R.drawable.account_generic)
-                .into(imageView)
         }
     }
 }
