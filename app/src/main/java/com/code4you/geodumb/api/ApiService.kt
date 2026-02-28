@@ -90,6 +90,9 @@ interface ApiService {
     @GET("rifiuti/")
     suspend fun getRifiuti(): Response<List<RifiutiResponse>>
 
+    @GET("users/me/segnalazioni")
+    suspend fun getMySegnalazioni(): Response<List<RifiutiResponse>>
+
     /**
      * Ottieni rifiuti senza autenticazione (per test)
      */

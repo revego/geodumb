@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.code4you.geodumb.api.Result
 import com.code4you.geodumb.api.RetrofitClient
+import com.code4you.geodumb.api.RifiutiResponse
 import com.code4you.geodumb.api.safeApiCall
 import com.code4you.geodumb.databinding.ActivityPhotoDetailBinding
 import kotlinx.coroutines.launch
@@ -101,15 +102,17 @@ class PhotoDetailActivity : AppCompatActivity() {
         checkAuthentication()
 
         // 4️⃣ Sincronizza con server
-        loadRifiutiFromServer()
+        loadMyReportFromServer()
         //syncWithServer()
     }
 
-    private fun loadRifiutiFromServer() {
+    private fun loadMyReportFromServer() {
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.apiService.getRifiuti()
+                //recover only my complains
+                val response = RetrofitClient.apiService.getMySegnalazioni()
+                //val response = RetrofitClient.apiService.getRifiuti()
 
                 if (response.isSuccessful) {
 
