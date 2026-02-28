@@ -3,6 +3,7 @@ package com.code4you.geodumb
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,6 +13,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.code4you.geodumb.api.ResolveImageResponse
@@ -90,6 +92,26 @@ class SentImagesAdapter(
         holder.textViewAddress.text = item.address
         holder.textViewRecordId.text = "ID: ${item.id}"
         holder.chipType.text = item.typo ?: "ND"
+
+        // Colore chip in base al tipo
+        val chipColor = when (item.typo?.uppercase()) {
+            "RIFIUTI"            -> ContextCompat.getColor(context, R.color.chip_rifiuti)
+            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.chip_piantumazione)
+            "CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, R.color.chip_censimento_arboreo)
+            "TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, R.color.chip_tronchi_tagliati)
+            else                 -> ContextCompat.getColor(context, R.color.grey_600)
+        }
+        // Testo scuro su sfondi chiari, bianco su sfondi scuri
+        val textColor = when (item.typo?.uppercase()) {
+            "RIFIUTI"            -> ContextCompat.getColor(context, R.color.gray_800)
+            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.gray_800)
+            "CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, android.R.color.white)
+            "TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, android.R.color.white)
+            else                 -> ContextCompat.getColor(context, android.R.color.white)
+        }
+        holder.chipType.setTypeface(holder.chipType.typeface, android.graphics.Typeface.BOLD)
+        holder.chipType.chipBackgroundColor = ColorStateList.valueOf(chipColor)
+        holder.chipType.setTextColor(textColor)
 
         // Gestione autenticazione
         if (isUserAuthenticated) {
