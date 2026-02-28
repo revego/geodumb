@@ -103,12 +103,31 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onResume() {
         super.onResume()
         updateSentImagesCount()
+        loadPublishedImagesCount()
     }
 
     private fun updateSentImagesCount() {
         val sentImagesCount = ImageLogger.getSentImages(this).size
         val tvCount = findViewById<TextView>(R.id.txt_images_sent)
         tvCount.text = "$sentImagesCount"
+    }
+
+    private fun loadPublishedImagesCount() {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.apiService.getMySegnalazioni()
+
+                if (response.isSuccessful) {
+                    val count = response.body()?.size ?: 0
+                    findViewById<TextView>(R.id.txt_images_published).text = count.toString()
+                } else {
+                    findViewById<TextView>(R.id.txt_images_published).text = "0"
+                }
+
+            } catch (e: Exception) {
+                findViewById<TextView>(R.id.txt_images_published).text = "0"
+            }
+        }
     }
 
     private fun checkAuthentication(): Boolean {
