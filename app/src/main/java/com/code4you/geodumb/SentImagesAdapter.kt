@@ -19,6 +19,7 @@ import com.bumptech.glide.Glide
 import com.code4you.geodumb.api.ResolveImageResponse
 import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.api.RifiutiResponse
+import com.code4you.geodumb.api.SegnalazioneStatusUpdate
 import com.google.android.material.chip.Chip
 import retrofit2.Call
 import retrofit2.Callback
@@ -262,6 +263,7 @@ class SentImagesAdapter(
 
         val spHelper = SharedPreferencesHelper(context)
         val token = spHelper.getAuthToken()
+        val update = SegnalazioneStatusUpdate("99")
 
         if (token.isNullOrBlank()) {
             Toast.makeText(context, "Non autenticato", Toast.LENGTH_SHORT).show()
@@ -269,7 +271,8 @@ class SentImagesAdapter(
         }
 
         RetrofitClient.apiService
-            .deleteRifiuti(recordId)
+            //.deleteSegnalazione(recordId)
+            .updateSegnalazione(recordId,update)
             .enqueue(object : Callback<Unit> {
 
                 override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
@@ -325,7 +328,7 @@ class SentImagesAdapter(
             Log.d("TOKEN_DEBUG", "freshToken = $freshToken")
 
             RetrofitClient.apiService
-                .deleteRifiuti(recordId)
+                .deleteSegnalazione(recordId)
                 .enqueue(object : Callback<Unit> {
 
                     override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
@@ -594,4 +597,10 @@ class SentImagesAdapter(
             })
     }
 
+    fun removeAt(position: Int) {
+        val mutable = items.toMutableList()
+        mutable.removeAt(position)
+        items = mutable
+        notifyItemRemoved(position)
+    }
 }

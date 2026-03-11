@@ -42,6 +42,7 @@ data class RifiutiResponse(
     @SerializedName("imageId") val imageId: String?
 )
 
+
 data class ApiError(
     val detail: String?,
     val code: Int?
@@ -66,6 +67,9 @@ data class ResolveImageResponse(
     @SerializedName("image_id") val imageId: String,
     @SerializedName("image_url") val imageUrl: String
 )
+data class SegnalazioneStatusUpdate(
+    @SerializedName("status") val status: String?
+)
 
 data class UserData(
     val id: String,
@@ -81,6 +85,15 @@ interface ApiService {
     suspend fun facebookLogin(
         @Body request: FacebookLoginRequest
     ): Response<FacebookLoginResponse>
+
+    // ============ SEGNALAZIONI ENDPOINTS =======
+
+    @PUT("segnalazioni/{id}")
+    fun updateSegnalazione(
+        @Path("id") id: Int,
+        @Body statusUpdate: SegnalazioneStatusUpdate
+    ): Call<Unit>
+
 
     // ============ RIFIUTI ENDPOINTS ============
 
@@ -136,7 +149,7 @@ interface ApiService {
     ): Call<RifiutiResponse>
 
     /**
-     * Elimina record rifiuti
+     * RIFIUTI: Elimina record rifiuti
      */
 
     @GET("rifiuti/legacy/resolve-image-id")
@@ -147,6 +160,11 @@ interface ApiService {
 
     @DELETE("rifiuti/{id}")
     fun deleteRifiuti(
+        @Path("id") id: Int
+    ): Call<Unit>
+
+    @DELETE("segnalazioni/{id}")
+    fun deleteSegnalazione(
         @Path("id") id: Int
     ): Call<Unit>
 

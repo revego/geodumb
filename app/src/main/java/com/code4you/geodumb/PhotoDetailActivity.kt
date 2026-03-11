@@ -16,13 +16,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.code4you.geodumb.api.Result
 import com.code4you.geodumb.api.RetrofitClient
-import com.code4you.geodumb.api.RifiutiResponse
 import com.code4you.geodumb.api.safeApiCall
 import com.code4you.geodumb.databinding.ActivityPhotoDetailBinding
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
+
 
 private const val REQUEST_IMAGE_CAPTURE = 1
 private const val TAG = "PhotoDetailActivity"
@@ -133,6 +136,53 @@ class PhotoDetailActivity : AppCompatActivity() {
                 Log.e("SERVER", "Eccezione", e)
             }
         }
+    }
+
+    private fun deleteSegnalazione(recordId: Int, position: Int) {
+
+        RetrofitClient.apiService
+            .deleteSegnalazione(recordId)
+            .enqueue(object : Callback<Unit> {
+
+                override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+
+                    if (response.isSuccessful) {
+
+                        adapter.removeAt(position)
+
+                        Toast.makeText(
+                            this@PhotoDetailActivity,
+                            "Segnalazione eliminata",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                    } else if (response.code() == 403) {
+
+                        Toast.makeText(
+                            this@PhotoDetailActivity,
+                            "Non puoi eliminare segnalazioni di altri utenti",
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                    } else {
+
+                        Toast.makeText(
+                            this@PhotoDetailActivity,
+                            "Errore ${response.code()}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<Unit>, t: Throwable) {
+
+                    Toast.makeText(
+                        this@PhotoDetailActivity,
+                        "Errore di rete",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
     }
 
     private fun checkAuthentication() {
