@@ -22,6 +22,7 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -98,6 +99,18 @@ class MainActivity : AppCompatActivity(), LocationListener {
         setupBottomNavigation()
         //show AccessToken
         showTokenInfo()
+    }
+
+    fun toggleInstructions(view: View) {
+        val detail = findViewById<LinearLayout>(R.id.instructions_detail)
+        val btnLabel = findViewById<TextView>(R.id.btn_hint_detail)
+        if (detail.visibility == View.GONE) {
+            detail.visibility = View.VISIBLE
+            btnLabel.text = "Chiudi ‹"
+        } else {
+            detail.visibility = View.GONE
+            btnLabel.text = "Dettagli ›"
+        }
     }
 
     override fun onResume() {
