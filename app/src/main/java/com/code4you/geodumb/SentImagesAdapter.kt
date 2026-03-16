@@ -69,6 +69,100 @@ class SentImagesAdapter(
 
         Log.d("SENT_ADAPTER", "Posizione $position - Autenticato: $isUserAuthenticated")
 
+        // Pulisci immagine precedente
+        holder.imageView.setImageDrawable(null)
+
+        // Carica immagine dal server
+        Glide.with(holder.itemView.context)
+            .load(item.imageUrl)
+            .into(holder.imageView)
+
+        // Data formattata
+        holder.textViewDate.text = item.imageTime?.let { raw ->
+            val datePart = raw.substringBefore("T")
+            val timePart = raw.substringAfter("T").substringBefore(".")
+            "$datePart alle $timePart"
+        } ?: "Data non disponibile"
+
+        // Campi testo
+        holder.textViewAddress.text = item.address
+        holder.textViewRecordId.text = "ID: ${item.id}"
+
+        // ── Coordinate (sostituisce nome utente) ────────────────────────
+        val lat = item.latitude?.toString()?.toDoubleOrNull()
+            ?.let { String.format("%.5f", it) } ?: "--"
+        val lon = item.longitude?.toString()?.toDoubleOrNull()
+            ?.let { String.format("%.5f", it) } ?: "--"
+        holder.textViewUser.text = "Lat: $lat · Lon: $lon"
+
+        //val lat = item.latitude?.let  { String.format("%.5f", it) } ?: "--"
+        //val lon = item.longitude?.let { String.format("%.5f", it) } ?: "--"
+        //holder.textViewUser.text = "Lat: $lat · Lon: $lon"
+        holder.textViewUser.visibility = View.VISIBLE
+
+        // ── Chip tipo + colori ──────────────────────────────────────────
+        holder.chipType.text = item.typo ?: "ND"
+
+        Log.d("CHIP_DEBUG", "typo raw value: '${item.typo}'")
+        val chipColor = when (item.typo?.uppercase()) {
+            "RIFIUTI"            -> ContextCompat.getColor(context, R.color.chip_rifiuti)
+            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.chip_piantumazione)
+            "CENSIMENTO","CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, R.color.chip_censimento_arboreo)
+            "TRONCHI","TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, R.color.chip_tronchi_tagliati)
+            else                 -> ContextCompat.getColor(context, R.color.grey_600)
+        }
+        val textColor = when (item.typo?.uppercase()) {
+            "RIFIUTI"            -> ContextCompat.getColor(context, R.color.gray_800)
+            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.gray_800)
+            "CENSIMENTO","CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, android.R.color.white)
+            "TRONCHI","TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, android.R.color.white)
+            else                 -> ContextCompat.getColor(context, android.R.color.white)
+        }
+        holder.chipType.setTypeface(holder.chipType.typeface, android.graphics.Typeface.BOLD)
+        holder.chipType.chipBackgroundColor = ColorStateList.valueOf(chipColor)
+        holder.chipType.setTextColor(textColor)
+
+        // ── Visibilità bottone Elimina ──────────────────────────────────
+        holder.deleteButton.visibility = if (isUserAuthenticated) View.VISIBLE else View.GONE
+
+        // ── Listener su posizione stabile ──────────────────────────────
+        val currentPosition = holder.absoluteAdapterPosition
+        if (currentPosition != RecyclerView.NO_POSITION) {
+
+            // Tap immagine → apre mappa (sostituisce mapButton)
+            holder.imageView.setOnClickListener {
+                val latitude  = item.latitude
+                val longitude = item.longitude
+                if (latitude != null && longitude != null) {
+                    val mapUrl = "https://maps.google.com/?q=$latitude,$longitude"
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(mapUrl))
+                    context.startActivity(intent)
+                } else {
+                    Toast.makeText(context, "Coordinate non disponibili", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            // Elimina
+            holder.deleteButton.setOnClickListener {
+                if (!isUserAuthenticated) {
+                    Toast.makeText(
+                        context,
+                        "Devi essere autenticato per eliminare il record",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@setOnClickListener
+                }
+                showDeleteConfirmationDialog(currentPosition, item.id)
+            }
+        }
+    }
+
+    fun onBindViewHolder2(holder: ViewHolder, position: Int) {
+
+        val item = items[position]
+
+        Log.d("SENT_ADAPTER", "Posizione $position - Autenticato: $isUserAuthenticated")
+
         // Pulisci immagine precedentez\
         holder.imageView.setImageDrawable(null)
 
@@ -82,12 +176,6 @@ class SentImagesAdapter(
             val timePart = raw.substringAfter("T").substringBefore(".")
             "$datePart alle $timePart"
         } ?: "Data non disponibile"
-
-        // Mostra dati dal backend
-        //holder.textViewDate.text =
-        //    item.imageTime?.let {
-        //        formatDate(it, item.city ?: "")
-        //    } ?: "Data non disponibile"
 
         //holder.textViewDate.text = item.imageTime?.substringBefore("T")
         holder.textViewAddress.text = item.address
@@ -271,8 +359,8 @@ class SentImagesAdapter(
         }
 
         RetrofitClient.apiService
-            //.deleteSegnalazione(recordId)
-            .updateSegnalazione(recordId,update)
+            .deleteSegnalazione(recordId)
+            //.updateSegnalazione(recordId,update)
             .enqueue(object : Callback<Unit> {
 
                 override fun onResponse(call: Call<Unit>, response: Response<Unit>) {

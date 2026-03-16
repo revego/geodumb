@@ -1,7 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Geodumb" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
         <item name="colorPrimary">@color/pastel_gray_primary</item>
         <item name="colorPrimaryContainer">@color/pastel_gray_primary_container</item>
         <item name="colorOnPrimary">@color/pastel_on_primary</item>
@@ -47,10 +46,35 @@
         <item name="colorSurface">@color/pastel_surface</item>
         <item name="colorSurfaceVariant">@color/pastel_surface_variant</item>
 
-        <!-- Status bar and system bars -->
-        <item name="android:statusBarColor">@color/pastel_gray_primary</item>
-        <item name="android:navigationBarColor">@color/pastel_gray_primary</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <!--
+            STATUS BAR — CityLog redesign
+            Colore verde foresta coerente con la toolbar.
+            windowLightStatusBar=false → icone di sistema bianche (leggibili su verde scuro).
+        -->
+        <item name="android:statusBarColor">@color/cl_green_deep</item>
+        <item name="android:navigationBarColor">@color/cl_green_deep</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!--
+            TOOLBAR — forza colori bianchi per titolo e icona navigazione.
+            Necessario perché Material3 sovrascrive navigationIconTint
+            con colorControlNormal del tema (grigio) ignorando l'XML del layout.
+        -->
+        <item name="toolbarStyle">@style/CityLogToolbarStyle</item>
+    </style>
+
+    <style name="CityLogToolbarStyle" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">#2D6A4F</item>
+        <item name="titleTextColor">#FFFFFF</item>
+        <item name="navigationIconTint">#FFFFFF</item>
+        <item name="colorControlNormal">#FFFFFF</item>
+        <item name="android:theme">@style/CityLogToolbarThemeOverlay</item>
+    </style>
+
+    <style name="CityLogToolbarThemeOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <item name="colorControlNormal">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
     </style>
 
     <!-- Opzione 2: Tema Material Design 3 Dark -->

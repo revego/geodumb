@@ -1,109 +1,232 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@android:color/white"
-    android:layout_marginBottom="8dp"
-    android:elevation="2dp">
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/cl_card_stroke"
+    app:cardBackgroundColor="@android:color/white">
 
-    <!-- Immagine principale -->
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:scaleType="centerCrop"
-        android:contentDescription="Immagine inviata"
-        android:background="@color/pastel_gray_secondary" />
-
-    <!-- Riga ID + Badge Tipo -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:id="@+id/textViewRecordId"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ID: 0"
-            android:textColor="@color/black"
-            android:textStyle="bold"
-            android:textSize="14sp"/>
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipType"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TIPO"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:textSize="12sp"
-            android:layout_marginStart="8dp"
-
-            app:chipBackgroundColor="@android:color/darker_gray"
-            app:chipStrokeWidth="0dp"
-            app:rippleColor="@android:color/transparent"
-            app:ensureMinTouchTargetSize="false"/>
-
-    </LinearLayout>
-
-    <!-- Data -->
-    <TextView
-        android:id="@+id/textViewDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Data placeholder"
-        android:layout_marginTop="6dp" />
-
-    <!-- Indirizzo -->
-    <TextView
-        android:id="@+id/textViewAddress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Indirizzo placeholder"
-        android:layout_marginTop="4dp" />
-
-    <!-- Informazioni utente -->
-    <TextView
-        android:id="@+id/textViewUser"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Utente: Non autenticato"
-        android:textStyle="bold"
-        android:layout_marginTop="6dp" />
-
-    <!-- Bottoni azione -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="12dp">
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/deleteButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Delete"
-            android:backgroundTint="@color/red"
-            android:textColor="@color/white"
-            android:layout_marginEnd="4dp" />
+        <!-- ══════════════════════════════════════
+             FOTO — tap apre la mappa
+        ══════════════════════════════════════ -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp">
 
-        <Button
-            android:id="@+id/mapButton"
-            android:layout_width="0dp"
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:contentDescription="Immagine inviata"
+                android:background="@color/pastel_gray_secondary"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Chip tipo — sovrapposto in alto a sinistra -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_margin="10dp"
+                android:text="TIPO"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                app:chipBackgroundColor="@color/grey_600"
+                app:chipStrokeWidth="0dp"
+                app:rippleColor="@android:color/transparent"
+                app:ensureMinTouchTargetSize="false" />
+
+            <!-- Hint "Vedi mappa" — sovrapposto in basso a destra -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="10dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/shape_badge_dark"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:clickable="false"
+                android:focusable="false">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_maps"
+                    app:tint="#D8F3DC"
+                    android:layout_marginEnd="5dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Vedi mappa"
+                    android:textColor="#D8F3DC"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!-- ══════════════════════════════════════
+             CONTENUTO TESTUALE
+        ══════════════════════════════════════ -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Map"
-            android:backgroundTint="@color/blue"
-            android:textColor="@color/white"
-            android:layout_marginStart="4dp" />
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="16dp">
+
+            <!-- ID + Data -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/textViewRecordId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0"
+                    android:text="1042"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="13sp"
+                    android:background="@drawable/shape_id_badge"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/textViewDate"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="Data placeholder"
+                    android:textColor="@color/cl_text_secondary"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Divisore -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/cl_green_mint"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Indirizzo -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="top"
+                android:layout_marginBottom="8dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_maps"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/cl_green_sage" />
+
+                <TextView
+                    android:id="@+id/textViewAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Indirizzo placeholder"
+                    android:textColor="@color/cl_text_secondary"
+                    android:textSize="13sp"
+                    android:lineSpacingMultiplier="1.4" />
+
+            </LinearLayout>
+
+            <!-- Coordinate (sostituisce utente) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="14dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_info_outline"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/cl_green_sage" />
+
+                <TextView
+                    android:id="@+id/textViewUser"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Lat: -- · Lon: --"
+                    android:textColor="@color/cl_text_secondary"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+            <!-- Elimina — full width, la mappa è sul tap foto -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/deleteButton"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Elimina segnalazione"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                app:icon="@drawable/ic_delete"
+                app:iconGravity="textStart"
+                app:iconTint="@android:color/white"
+                app:iconPadding="6dp"
+                app:cornerRadius="12dp"
+                android:backgroundTint="@color/red" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="L'operazione di eliminazione non è reversibile."
+                android:textColor="@color/red"
+                android:textSize="11sp"
+                android:gravity="center"
+                android:alpha="0.7" />
+
+            <!-- mapButton mantenuto invisibile per compatibilità adapter -->
+            <Button
+                android:id="@+id/mapButton"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
     </LinearLayout>
 
-</LinearLayout>
+</com.google.android.material.card.MaterialCardView>

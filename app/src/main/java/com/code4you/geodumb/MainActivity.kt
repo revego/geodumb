@@ -21,15 +21,19 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.code4you.geodumb.api.FacebookLoginRequest
 import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.databinding.ActivityMainBinding
@@ -68,6 +72,30 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private var photoUri: Uri? = null
     private var currentPhotoPath: String? = null
 
+    // ← INSERISCI QUI il cameraLauncher
+    private val cameraLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            photoUri?.let { uri ->
+                val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
+                if (bitmap != null) {
+                    val resizedBitmap = resizeBitmap(bitmap, 800, 800)
+                    val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
+                    updatePhotoCard(Uri.fromFile(compressedFile), compressedFile.absolutePath)
+                    val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                    Log.d(TAG, message)
+                    sendEmailButton.setOnClickListener {
+                        sendEmail(uri, message, AccessToken.getCurrentAccessToken())
+                    }
+                } else {
+                    Log.e(TAG, "Bitmap is null, cannot process image")
+                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     companion object {
         private const val REQUEST_PERMISSIONS = 2
         private const val REQUEST_IMAGE_CAPTURE = 1
@@ -100,10 +128,96 @@ class MainActivity : AppCompatActivity(), LocationListener {
         showTokenInfo()
     }
 
+
+    fun toggleInstructions(view: View) {
+        val detail = findViewById<LinearLayout>(R.id.instructions_detail)
+        val btnLabel = findViewById<TextView>(R.id.btn_hint_detail)
+        if (detail.visibility == View.GONE) {
+            detail.visibility = View.VISIBLE
+            btnLabel.text = "Chiudi ‹"
+        } else {
+            detail.visibility = View.GONE
+            btnLabel.text = "Dettagli ›"
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+// 1) AGGIUNGI questo metodo nella classe MainActivity
+//    (dopo toggleInstructions, prima di onResume)
+// ══════════════════════════════════════════════════════════════
+
+    private fun updatePhotoCard(uri: Uri, photoPath: String) {
+        Log.d("PHOTO_CARD", "updatePhotoCard chiamata con path: $photoPath")
+        val containerWithImage = findViewById<FrameLayout>(R.id.photo_with_image_container)
+        val noPhotoContent     = findViewById<LinearLayout>(R.id.no_photo_content)
+        val statsDivider       = findViewById<View>(R.id.stats_divider)
+        val imgPhoto           = findViewById<ImageView>(R.id.img_photo)
+        val txtTimestamp       = findViewById<TextView>(R.id.txt_photo_timestamp)
+
+        // Mostra container foto, nascondi placeholder
+        containerWithImage.visibility = View.VISIBLE
+        noPhotoContent.visibility     = View.GONE
+        statsDivider.visibility       = View.VISIBLE
+
+        // Carica bitmap
+        val bitmap = BitmapFactory.decodeFile(photoPath)
+        if (bitmap != null) {
+            imgPhoto.setImageBitmap(bitmap)
+        } else {
+            imgPhoto.setImageURI(uri)
+        }
+
+        // Timestamp badge
+        val timestamp = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date())
+        txtTimestamp.text = "oggi ${timestamp.split(" ")[1]}"
+        txtTimestamp.visibility = View.VISIBLE
+
+        // Salva path per persistenza tra sessioni
+        getSharedPreferences("app_prefs", MODE_PRIVATE)
+            .edit()
+            .putString("last_photo_path", photoPath)
+            .apply()
+    }
+
+    private fun updatePhotoCard2(uri: Uri, photoPath: String) {
+        Log.d("PHOTO_CARD", "updatePhotoCard chiamata con path: $photoPath")
+        val containerWithImage = findViewById<FrameLayout>(R.id.photo_with_image_container)
+        val noPhotoContent    = findViewById<LinearLayout>(R.id.no_photo_content)
+        val statsDivider      = findViewById<View>(R.id.stats_divider)
+        val imgPhoto          = findViewById<ImageView>(R.id.img_photo)
+        val txtTimestamp      = findViewById<TextView>(R.id.txt_photo_timestamp)
+
+        // Mostra container foto, nascondi placeholder
+        containerWithImage.visibility = View.VISIBLE
+        noPhotoContent.visibility     = View.GONE
+        statsDivider.visibility       = View.VISIBLE
+
+        // Carica bitmap (già ridimensionata e compressa dal tuo codice esistente)
+        val bitmap = BitmapFactory.decodeFile(photoPath)
+        if (bitmap != null) {
+            imgPhoto.setImageBitmap(bitmap)
+        } else {
+            imgPhoto.setImageURI(uri)
+        }
+
+        // Timestamp badge
+        val timestamp = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date())
+        txtTimestamp.text = "oggi ${timestamp.split(" ")[1]}"
+        txtTimestamp.visibility = View.VISIBLE
+    }
+
+
     override fun onResume() {
         super.onResume()
         updateSentImagesCount()
         loadPublishedImagesCount()
+        val lastPath = getSharedPreferences("app_prefs", MODE_PRIVATE)
+            .getString("last_photo_path", null)
+        Log.d("PHOTO_RESUME", "lastPath: $lastPath")
+        Log.d("PHOTO_RESUME", "file exists: ${lastPath?.let { File(it).exists() }}")
+        if (lastPath != null && File(lastPath).exists()) {
+            updatePhotoCard(Uri.fromFile(File(lastPath)), lastPath)
+        }
     }
 
     private fun updateSentImagesCount() {
@@ -116,14 +230,38 @@ class MainActivity : AppCompatActivity(), LocationListener {
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.getMySegnalazioni()
-
                 if (response.isSuccessful) {
-                    val count = response.body()?.size ?: 0
-                    findViewById<TextView>(R.id.txt_images_published).text = count.toString()
+                    val list = response.body() ?: emptyList()
+
+                    // Aggiorna contatore
+                    findViewById<TextView>(R.id.txt_images_published).text = list.size.toString()
+
+                    // Carica ultima segnalazione nella photo card
+                    val last = list.maxByOrNull { it.imageTime ?: "" }
+                    if (last != null) {
+                        val containerWithImage = findViewById<FrameLayout>(R.id.photo_with_image_container)
+                        val noPhotoContent     = findViewById<LinearLayout>(R.id.no_photo_content)
+                        val statsDivider       = findViewById<View>(R.id.stats_divider)
+                        val imgPhoto           = findViewById<ImageView>(R.id.img_photo)
+                        val txtTimestamp       = findViewById<TextView>(R.id.txt_photo_timestamp)
+
+                        containerWithImage.visibility = View.VISIBLE
+                        noPhotoContent.visibility     = View.GONE
+                        statsDivider.visibility       = View.VISIBLE
+
+                        Glide.with(this@MainActivity)
+                            .load(last.imageUrl)
+                            .into(imgPhoto)
+
+                        txtTimestamp.text = last.imageTime
+                            ?.substringBefore("T")
+                            ?: ""
+                        txtTimestamp.visibility = View.VISIBLE
+                    }
+
                 } else {
                     findViewById<TextView>(R.id.txt_images_published).text = "0"
                 }
-
             } catch (e: Exception) {
                 findViewById<TextView>(R.id.txt_images_published).text = "0"
             }
@@ -470,7 +608,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
             )
             Log.d(TAG, "Photo URI: $photoUri")
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-            this.startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+            cameraLauncher.launch(takePictureIntent)
+            //this.startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
         } ?: run {
             Log.e(TAG, "Photo file is null")
         }
@@ -534,7 +673,37 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 if (bitmap != null) {
                     val resizedBitmap = resizeBitmap(bitmap, 800, 800)
                     val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
-                    imageView.setImageURI(Uri.fromFile(compressedFile))
+
+                    // ← RIGA ESISTENTE: lasciala pure, updatePhotoCard la gestisce internamente
+                    // imageView.setImageURI(Uri.fromFile(compressedFile))  // puoi commentarla
+
+                    // ← NUOVO: aggiorna la photo card nel nuovo layout
+                    updatePhotoCard(Uri.fromFile(compressedFile), compressedFile.absolutePath)
+
+                    val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                    Log.d(TAG, message)
+
+                    sendEmailButton.setOnClickListener {
+                        sendEmail(uri, message, AccessToken.getCurrentAccessToken())
+                    }
+                } else {
+                    Log.e(TAG, "Bitmap is null, cannot process image")
+                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    fun onActivityResult2(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+            photoUri?.let { uri ->
+                val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
+                if (bitmap != null) {
+                    val resizedBitmap = resizeBitmap(bitmap, 800, 800)
+                    val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
+                    updatePhotoCard(Uri.fromFile(compressedFile), compressedFile.absolutePath)
+                    //imageView.setImageURI(Uri.fromFile(compressedFile))
                     val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
                     Log.d(TAG, message)
 
