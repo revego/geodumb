@@ -71,6 +71,21 @@ data class SegnalazioneStatusUpdate(
     @SerializedName("status") val status: String?
 )
 
+data class GoogleLoginRequest(
+    val google_token: String
+)
+
+data class GoogleLoginResponse(
+    val status: String,
+    val token: String,
+    val user: UserDto
+)
+
+data class UserDto(
+    val email: String,
+    val name: String
+)
+
 data class UserData(
     val id: String,
     val name: String,
@@ -85,6 +100,13 @@ interface ApiService {
     suspend fun facebookLogin(
         @Body request: FacebookLoginRequest
     ): Response<FacebookLoginResponse>
+
+    // ============ AUTENTICAZIONE GOOGLE ======
+    @POST("auth/google")
+    suspend fun googleLogin(
+        @Body request: GoogleLoginRequest
+    ): Response<GoogleLoginResponse>
+
 
     // ============ SEGNALAZIONI ENDPOINTS =======
 

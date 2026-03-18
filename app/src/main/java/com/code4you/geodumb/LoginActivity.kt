@@ -28,7 +28,13 @@ import com.facebook.FacebookException
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.facebook.login.widget.LoginButton
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.security.MessageDigest
 
 class LoginActivity : AppCompatActivity() {
@@ -39,6 +45,9 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var legalText: TextView
     private lateinit var versionText: TextView
 
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private val RC_SIGN_IN = 9001
+
     override fun onCreate(savedInstanceState: Bundle?) {
         LoginManager.getInstance().logOut()
         Log.d("FB_TRACE", "Logout eseguito prima di registrare callback")
@@ -47,6 +56,21 @@ class LoginActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
+        //Google authenication
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestIdToken(getString(R.string.server_client_id))
+            .build()
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        val googleButton = findViewById<MaterialButton>(R.id.google_sign_in_button)
+
+        googleButton.setOnClickListener {
+            val signInIntent = googleSignInClient.signInIntent
+            startActivityForResult(signInIntent, RC_SIGN_IN)
+        }
 
         // 🔹 Logout pulito all’avvio per evitare token residui
         LoginManager.getInstance().logOut()
@@ -225,7 +249,32 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        //Facebook
         callbackManager.onActivityResult(requestCode, resultCode, data)
+
+        // Google
+        if (requestCode == RC_SIGN_IN) {
+
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+
+            try {
+                val account = task.getResult(ApiException::class.java)
+
+                val idToken = account.idToken
+
+                Log.d("GOOGLE_LOGIN", "ID Token: $idToken")
+
+                sendTokenToBackend(idToken)
+
+            } catch (e: ApiException) {
+                Log.e("GOOGLE_LOGIN", "Login fallito", e)
+            }
+        }
+    }
+
+    fun sendTokenToBackend(token: String?) {
+        val json = JSONObject()
+        json.put("google_token", token)
     }
 
     private fun goToMainActivity() {
