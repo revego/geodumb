@@ -55,6 +55,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.jvm.java
 
 class MainActivity : AppCompatActivity(), LocationListener {
 

@@ -14,7 +14,7 @@
         android:id="@+id/app_logo"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:src="@drawable/ic_launcher_foreground"
+        android:src="@drawable/citylog_logo"
         android:contentDescription="Logo dell'App"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"

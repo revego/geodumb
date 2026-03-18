@@ -193,31 +193,23 @@
 
             </LinearLayout>
 
-            <!-- Elimina — full width, la mappa è sul tap foto -->
+            <!-- Elimina — solo icona centrata -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/deleteButton"
                 style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="Elimina segnalazione"
-                android:textColor="@android:color/white"
-                android:textSize="13sp"
+                android:layout_height="48dp"
+                android:text=""
+                android:backgroundTint="@color/red"
                 app:icon="@drawable/ic_delete"
                 app:iconGravity="textStart"
                 app:iconTint="@android:color/white"
-                app:iconPadding="6dp"
+                app:iconSize="24dp"
                 app:cornerRadius="12dp"
-                android:backgroundTint="@color/red" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="L'operazione di eliminazione non è reversibile."
-                android:textColor="@color/red"
-                android:textSize="11sp"
-                android:gravity="center"
-                android:alpha="0.7" />
+                app:iconPadding="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:gravity="center" />
 
             <!-- mapButton mantenuto invisibile per compatibilità adapter -->
             <Button
