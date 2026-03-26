@@ -5,7 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardUseCompatPadding="true">
+    android:layout_margin="8dp"
+    app:cardUseCompatPadding="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,14 +16,16 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
+        <!-- Immagine luogo -->
         <ImageView
             android:id="@+id/place_image"
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:scaleType="centerCrop"
-            tools:src="@drawable/ic_launcher_background"
-            android:contentDescription="Immagine del luogo"/>
+            android:contentDescription="Immagine del luogo"
+            tools:src="@drawable/ic_launcher_background" />
 
+        <!-- Contenuto testuale -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -28,30 +33,58 @@
             android:orientation="vertical"
             android:layout_marginStart="12dp">
 
+            <!-- Quartiere (NUOVO - principale) -->
             <TextView
-                android:id="@+id/place_city"
+                android:id="@+id/place_district"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                tools:text="Nome Città"/>
+                android:textColor="@android:color/black"
+                tools:text="Trastevere" />
 
+            <TextView
+                android:id="@+id/place_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:layout_marginStart="8dp"
+                tools:text="2 segnalazioni" />
+
+            <!-- Città -->
+            <TextView
+                android:id="@+id/place_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp"
+                tools:text="Roma" />
+
+            <!-- Indirizzo (MANTENUTO per compatibilità) -->
             <TextView
                 android:id="@+id/place_address"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:maxLines="2"
                 android:ellipsize="end"
-                tools:text="Indirizzo completo del luogo segnalato..."/>
+                android:textSize="13sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp"
+                tools:text="Via Roma 123, Roma" />
 
+            <!-- Data -->
             <TextView
                 android:id="@+id/place_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
-                android:layout_marginTop="4dp"
-                tools:text="15/05/2024"/>
+                android:layout_marginTop="6dp"
+                android:textColor="@android:color/darker_gray"
+                tools:text="15/05/2024" />
+
         </LinearLayout>
+
     </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>
-    

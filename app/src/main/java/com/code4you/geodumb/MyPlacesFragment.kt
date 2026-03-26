@@ -5,13 +5,16 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar // Aggiungi una ProgressBar al layout per feedback
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.code4you.geodumb.api.ApiService
+import com.code4you.geodumb.api.NominatimApi
+import com.code4you.geodumb.data.MyPlace
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -19,15 +22,27 @@ import retrofit2.converter.gson.GsonConverterFactory
 class MyPlacesFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var progressBar: ProgressBar // Aggiungi una ProgressBar al tuo XML
+    private lateinit var progressBar: ProgressBar
 
-    // Configura Retrofit. In un'app reale, questo andrebbe in una classe dedicata (Singleton)
+    // ✅ Cache quartieri
+    private val districtCache = mutableMapOf<String, String>()
+
+    // 🔹 Retrofit backend (tuo)
     private val retrofit = Retrofit.Builder()
-        .baseUrl("https://api.citylog.cloud") // <<<--- CAMBIA QUESTO
+        .baseUrl("https://api.citylog.cloud")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
     private val apiService = retrofit.create(ApiService::class.java)
+
+    // 🔹 Retrofit NOMINATIM (separato)
+    private val nominatimRetrofit = Retrofit.Builder()
+        .baseUrl("https://nominatim.openstreetmap.org/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+
+    private val nominatimApi = nominatimRetrofit.create(NominatimApi::class.java)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -38,30 +53,62 @@ class MyPlacesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        //recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView = view.findViewById(R.id.my_places_recyclerview)
-        // progressBar = view.findViewById(R.id.progress_bar) // Trova la ProgressBar
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-
-        // Avvia la coroutine per fare la chiamata di rete
         fetchMyPlaces()
     }
-
 
     private fun fetchMyPlaces(useAuth: Boolean = false, authToken: String? = null) {
         lifecycleScope.launch {
             try {
+
                 val response = if (useAuth && !authToken.isNullOrBlank()) {
-                    // Usa endpoint con autenticazione
                     val token = if (!authToken.startsWith("Bearer ")) "Bearer $authToken" else authToken
                     apiService.getMyPlacesWithAuth(token)
                 } else {
-                    // Usa endpoint senza autenticazione (no-auth)
                     apiService.getMyPlacesNoAuth()
                 }
 
                 if (response.isSuccessful && response.body() != null) {
+
                     val places = response.body()!!
-                    recyclerView.adapter = MyPlacesAdapter(places)
+
+                    val districts = mutableListOf<String>()
+
+                    for (place in places) {
+                        val district = getDistrict(place)
+                        districts.add(district)
+                    }
+
+                    // ✅ PARALLEL NOMINATIM
+                    //val districts = places.map { place ->
+                    //    async {
+                    //        getDistrict(place)
+                    //    }
+                    //}.awaitAll()
+
+                    // ✅ AGGREGAZIONE
+                    val districtCountMap = mutableMapOf<String, Int>()
+
+                    districts.forEach { district ->
+                        val current = districtCountMap[district] ?: 0
+                        districtCountMap[district] = current + 1
+                    }
+
+                    val districtList = districtCountMap.map {
+                        DistrictItem(it.key, it.value)
+                    }
+
+                    Log.d("DEBUG", "Places size: ${places.size}")
+                    Log.d("DEBUG", "Districts size: ${districts.size}")
+                    Log.d("DEBUG", "Map size: ${districtCountMap.size}")
+                    Log.d("DEBUG", "District list: $districtList")
+
+                    // ✅ NUOVO ADAPTER
+                    recyclerView.adapter = DistrictAdapter(districtList)
+
+
                 } else {
                     val errorCode = response.code()
                     val errorMsg = when (errorCode) {
@@ -72,38 +119,91 @@ class MyPlacesFragment : Fragment() {
                     }
                     Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show()
                 }
+
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Errore di connessione: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Errore: ${e.message}", Toast.LENGTH_SHORT).show()
                 Log.e("MyPlacesFragment", "Errore fetch", e)
             }
         }
     }
 
-    private fun fetchMyPlaces_() {
-        // progressBar.visibility = View.VISIBLE // Mostra il caricamento
+    // ✅ FUNZIONE NOMINATIM + CACHE
+    private suspend fun getDistrict(place: MyPlace): String {
 
-        // lifecycleScope si occupa di cancellare la coroutine se il fragment viene distrutto
-        lifecycleScope.launch {
-            try {
-                // Esempio di token, dovrai gestirlo in modo sicuro
-                val authToken = "Bearer TUO_TOKEN_DI_AUTENTICAZIONE"
-                val response = apiService.getMyPlaces(authToken)
+        val key = "${place.latitude},${place.longitude}"
 
-                // progressBar.visibility = View.GONE // Nascondi il caricamento
+        districtCache[key]?.let { return it }
 
-                if (response.isSuccessful && response.body() != null) {
-                    val places = response.body()!!
-                    // Crea e imposta l'adapter con i dati ricevuti
-                    recyclerView.adapter = MyPlacesAdapter(places)
-                } else {
-                    // Gestisci l'errore
-                    Toast.makeText(requireContext(), "Errore nel caricamento dei dati", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                // progressBar.visibility = View.GONE
-                // Gestisci eccezioni di rete (es. no internet)
-                Toast.makeText(requireContext(), "Errore di connessione: ${e.message}", Toast.LENGTH_SHORT).show()
+        return try {
+            delay(250)
+
+            val response = nominatimApi.reverseGeocode(
+                latitude = place.latitude.toString(),
+                longitude = place.longitude.toString()
+            )
+
+            if (response.isSuccessful) {
+                val address = response.body()?.address
+
+                val district =
+                    address?.suburb
+                        ?: address?.neighbourhood
+                        ?: address?.city_district
+                        ?: address?.borough
+                        ?: address?.town
+                        ?: address?.village
+                        ?: address?.city
+                        ?: address?.country
+                        ?: address?.state
+                        ?: "Sconosciuto"
+
+                districtCache[key] = district
+                Log.d("NOMINATIM", "FULL RESPONSE: ${response.body()}")
+
+                district
+            } else {
+                "Sconosciuto"
             }
+
+        } catch (e: Exception) {
+            "Sconosciuto"
+        }
+    }
+
+    private suspend fun getDistrict2(place: MyPlace): String {
+
+        val key = "${place.latitude},${place.longitude}"
+
+        // cache
+        districtCache[key]?.let { return it }
+
+        return try {
+            delay(250) // ⚠️ rate limit Nominatim
+
+            val response = nominatimApi.reverseGeocode(
+                latitude = place.latitude.toString(),
+                longitude = place.longitude.toString(),
+                userAgent = "GeoDumbApp"
+            )
+
+            if (response.isSuccessful) {
+                val address = response.body()?.address
+
+                val district =
+                    address?.suburb
+                        ?: address?.neighbourhood
+                        ?: address?.city_district
+                        ?: "Sconosciuto"
+
+                districtCache[key] = district
+
+                district
+            } else {
+                "Sconosciuto"
+            }
+
+        } catch (e: Exception) {
+            "Sconosciuto"
         }
     }
 }

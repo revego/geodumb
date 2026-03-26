@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+
+    <!-- Riga lunga (top) -->
+    <path
+        android:pathData="M3,6 L21,6"
+        android:strokeWidth="2"
+        android:strokeColor="@android:color/white"
+        android:strokeLineCap="round" />
+
+    <!-- Riga media (center) -->
+    <path
+        android:pathData="M3,12 L17,12"
+        android:strokeWidth="2"
+        android:strokeColor="@android:color/white"
+        android:strokeLineCap="round" />
+
+    <!-- Riga corta (bottom) — richiama il "sort by size" originale -->
+    <path
+        android:pathData="M3,18 L13,18"
+        android:strokeWidth="2"
+        android:strokeColor="@android:color/white"
+        android:strokeLineCap="round" />
+
+</vector>

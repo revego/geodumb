@@ -127,4 +127,33 @@
     <color name="chip_censimento_arboreo">#2E7D32</color>
     <color name="chip_tronchi_tagliati">#5D4037</color>
 
+    <!-- Palette CityLog – verde foresta -->
+    <color name="cl_green_deep">#2D6A4F</color>       <!-- toolbar, bottom nav, bottone primario -->
+    <color name="cl_green_sage">#52B788</color>        <!-- accento attivo, icone, bordi card -->
+    <color name="cl_green_mint">#D8F3DC</color>        <!-- superfici leggere, bordi sottili -->
+    <color name="cl_green_pale">#EBF7F0</color>        <!-- sfondo mission banner -->
+    <color name="cl_green_surface">#F0FAF4</color>     <!-- sfondo instructions card -->
+
+    <!-- Sfondo app -->
+    <color name="cl_background">#F4FAF6</color>
+
+    <!-- Testo -->
+    <color name="cl_text_primary">#1B2D27</color>      <!-- titoli, username -->
+    <color name="cl_text_secondary">#5A7569</color>    <!-- label statistiche -->
+    <color name="cl_text_subtle">#9DC4B0</color>       <!-- placeholder, hint -->
+    <color name="cl_text_instruction">#4A6558</color>  <!-- testo istruzioni -->
+
+    <!-- Statistiche -->
+    <color name="cl_stat_green">#2D6A4F</color>        <!-- valore immagini inviate -->
+    <color name="cl_stat_blue">#1A6B8A</color>         <!-- valore immagini pubblicate -->
+    <color name="cl_stat_amber">#9A6A00</color>        <!-- valore nuove nel quartiere -->
+
+    <!-- Dot indicators -->
+    <color name="cl_dot_green">#52B788</color>
+    <color name="cl_dot_blue">#1A6B8A</color>
+    <color name="cl_dot_amber">#E9A825</color>
+
+    <!-- Bordi card -->
+    <color name="cl_card_stroke">#C7EAD4</color>
+
 </resources>
