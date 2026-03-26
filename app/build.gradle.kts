@@ -29,8 +29,8 @@ android {
         applicationId = "com.code4you.geodumb"
         minSdk = 24
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.1.4"
+        versionCode = 6
+        versionName = "1.1.5r"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // ⬇️ Questo ora funzionerà
@@ -99,6 +99,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
     implementation(libs.play.services.location.v2101)
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
 
     implementation("com.google.code.gson:gson:2.8.6")
 

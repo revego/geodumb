@@ -21,7 +21,7 @@
         android:id="@+id/my_places_recyclerview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:listitem="@layout/item_report_simple" /> <!-- tools:listitem è per l'anteprima -->
+        tools:listitem="@layout/item_district" /> <!-- tools:listitem è per l'anteprima -->
 
 </LinearLayout>
     

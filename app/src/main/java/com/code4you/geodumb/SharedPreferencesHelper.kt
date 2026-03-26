@@ -6,7 +6,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import java.util.Date
 
-class SharedPreferencesHelper(context: Context) {
+class SharedPreferencesHelper(private val context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
@@ -76,7 +76,14 @@ class SharedPreferencesHelper(context: Context) {
     }
 
     // Cancella tutti i dati (logout)
+
     fun clearUserData() {
+        val userPrefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        userPrefs.edit().clear().apply()
+
+        Log.d("PREF_DEBUG", "User prefs cleared ONLY")
+    }
+    fun clearUserData2() {
         prefs.edit().clear().apply()
     }
 
