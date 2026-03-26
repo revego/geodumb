@@ -16,7 +16,13 @@ data class MyPlace(
     val imageUrl: String,
 
     @SerializedName("creation_date")
-    val date: String
+    val date: String,
+
+    @SerializedName("latitude")
+    val latitude: String,
+
+    @SerializedName("longitude")
+    val longitude: String
 )
 
 data class EmailData(

@@ -35,7 +35,7 @@ class FragmentContainerActivity : AppCompatActivity() {
             "PROFILE" -> ProfileFragment()
             "MY_PLACES" -> MyPlacesFragment() // <-- AGGIUNGI QUESTO CASO
             // Aggiungi qui altri casi per futuri fragment
-            // "SETTINGS" -> SettingsFragment()
+            "SETTINGS" -> SettingsFragment()
             // "MY_PLACES" -> MyPlacesFragment()
             else -> null
         }

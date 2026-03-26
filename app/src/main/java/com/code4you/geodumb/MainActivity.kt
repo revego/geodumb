@@ -41,6 +41,7 @@ import com.facebook.AccessToken
 import com.facebook.GraphRequest
 import com.facebook.login.LoginManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.picasso.Picasso
@@ -55,7 +56,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import kotlin.jvm.java
 
 class MainActivity : AppCompatActivity(), LocationListener {
 
@@ -112,6 +112,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
         } catch (e: Exception) {
             Log.d(TAG, "RetrofitClient già inizializzato")
         }
+        val btnCamera = findViewById<Button>(R.id.btn_take_photo)
+
+        btnCamera.isEnabled = canSendReport()
+        btnCamera.alpha = if (canSendReport()) 1.0f else 0.5f
+
 
         // VERIFICA AUTENTICAZIONE CON DUE STRATEGIE
         if (!checkAuthentication()) {
@@ -210,8 +215,21 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     override fun onResume() {
         super.onResume()
+        // 🔹 1. aggiorna stato dati
         updateSentImagesCount()
         loadPublishedImagesCount()
+
+        // 🔹 2. notifica utente (dipende da UI aggiornata)
+        checkLimitAndNotify()
+
+        // 🔹 3. gestione foto
+        val canSend = canSendReport()
+
+        Log.d("REPORT_DEBUG_ON_RESUME", "onResume canSend=${canSendReport()}")
+        takePhotoButton.isEnabled = canSend
+        Log.d("BTN_STATE", "onResume → enabled=$canSend")
+        takePhotoButton.alpha = if (canSend) 1f else 0.4f
+
         val lastPath = getSharedPreferences("app_prefs", MODE_PRIVATE)
             .getString("last_photo_path", null)
         Log.d("PHOTO_RESUME", "lastPath: $lastPath")
@@ -464,6 +482,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         takePhotoButton.setOnClickListener {
+            if (!canSendReport()) {
+                Toast.makeText(
+                    this,
+                    "Hai raggiunto il limite di segnalazioni",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             Log.d(TAG, "Take Photo button clicked")
             if (checkPermissions()) {
                 getLastKnownLocation()
@@ -533,6 +560,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 startActivity(intent)
                 true
             }
+            R.id.action_settings -> {
+                val intent = Intent(this, FragmentContainerActivity::class.java)
+                intent.putExtra("FRAGMENT_NAME", "SETTINGS")
+                startActivity(intent)
+                true
+            }
             R.id.action_logout -> {
                 logoutFacebook()
                 true
@@ -547,7 +580,14 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         // Pulisci SharedPreferences
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        prefs.edit().clear().apply()
+        //rimuovo solo i dati di login
+        prefs.edit()
+            .remove("facebook_token")
+            .remove("user_id")
+            .remove("user_name")
+            .apply()
+
+        //prefs.edit().clear().apply()
 
         // Pulisci Retrofit
         RetrofitClient.logout()
@@ -587,6 +627,54 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun takePhoto() {
+
+        // 🔴 BLOCCO HARD (fondamentale)
+        if (!canSendReport()) {
+            Toast.makeText(
+                this,
+                "Hai raggiunto il limite di segnalazioni",
+                Toast.LENGTH_SHORT
+            ).show()
+            Log.d("REPORT_DEBUG", "takePhoto BLOCCATA")
+            return
+        }
+
+        // resto codice
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
+        }
+
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+
+        val photoFile: File? = try {
+            createImageFile()
+        } catch (ex: IOException) {
+            null
+        }
+
+        photoFile?.also {
+            photoUri = FileProvider.getUriForFile(
+                this,
+                "com.code4you.geodumb.provider",
+                it
+            )
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+            cameraLauncher.launch(takePictureIntent)
+        }
+    }
+
+    private fun takePhoto2() {
+
+        // 🛑 BLOCCO LIMITE SEGNALAZIONI
+        if (!canSendReport()) {
+            Toast.makeText(
+                this,
+                "Hai raggiunto il limite di segnalazioni",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this)
         }
@@ -613,6 +701,59 @@ class MainActivity : AppCompatActivity(), LocationListener {
             //this.startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
         } ?: run {
             Log.e(TAG, "Photo file is null")
+        }
+    }
+
+    // 🔹 funzione controllo
+    private fun canSendReport(): Boolean {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+
+        val sent = prefs.getInt("reports_sent", 0)
+        // Prefernces helper for limit report count
+        val limit = PrefsManager.getReportLimit(this)
+        //val limit = prefs.getInt("reports_limit", 1)
+
+        Log.d("REPORT_DEBUG", "sent=$sent limit=$limit")
+
+        return sent < limit
+    }
+
+    // ✅ 👉 QUI: funzione increment contatore Impostazioni
+    private fun incrementReports() {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val current = prefs.getInt("reports_sent", 0)
+
+        val newValue = current + 1
+
+        prefs.edit().putInt("reports_sent", newValue).apply()
+
+        Log.d("REPORT_DEBUG", "increment → $current -> $newValue")
+    }
+
+    private fun incrementReports2() {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val current = prefs.getInt("reports_sent", 0)
+
+        prefs.edit()
+            .putInt("reports_sent", current + 1)
+            .apply()
+    }
+    private fun checkLimitAndNotify() {
+        if (!canSendReport()) {
+
+            val snackbar = Snackbar.make(
+                findViewById(android.R.id.content),
+                "Hai raggiunto il limite di segnalazioni",
+                Snackbar.LENGTH_LONG
+            )
+
+            snackbar.setAction("Impostazioni") {
+                val intent = Intent(this, FragmentContainerActivity::class.java)
+                intent.putExtra("FRAGMENT_NAME", "SETTINGS")
+                startActivity(intent)
+            }
+
+            snackbar.show()
         }
     }
 
@@ -681,30 +822,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
                     // ← NUOVO: aggiorna la photo card nel nuovo layout
                     updatePhotoCard(Uri.fromFile(compressedFile), compressedFile.absolutePath)
 
-                    val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
-                    Log.d(TAG, message)
-
-                    sendEmailButton.setOnClickListener {
-                        sendEmail(uri, message, AccessToken.getCurrentAccessToken())
-                    }
-                } else {
-                    Log.e(TAG, "Bitmap is null, cannot process image")
-                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-    fun onActivityResult2(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
-            photoUri?.let { uri ->
-                val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
-                if (bitmap != null) {
-                    val resizedBitmap = resizeBitmap(bitmap, 800, 800)
-                    val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
-                    updatePhotoCard(Uri.fromFile(compressedFile), compressedFile.absolutePath)
-                    //imageView.setImageURI(Uri.fromFile(compressedFile))
                     val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
                     Log.d(TAG, message)
 
@@ -814,6 +931,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
+            Log.d(TAG, "Email sent with photo URI: $photoUri")
+
+            // ✅ INCREMENTO CONTATORE
+            incrementReports()
+
             Log.d(TAG, "Email sent with photo URI: $photoUri")
 
             // Log Images

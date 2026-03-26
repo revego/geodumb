@@ -223,7 +223,19 @@ class LoginActivity : AppCompatActivity() {
                 if (result.isSuccessful) {
                     val loginResponse = result.body()
                     if (loginResponse != null) {
+
+                        // ✅ SALVATAGGIO USER PREFS
+                        val userPrefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                        userPrefs.edit()
+                            .putString("access_token", loginResponse.accessToken)
+                            .putString("facebook_token", facebookToken)
+                            .putString("user_id", token.userId)
+                            .apply()
+
+                        Log.d("PREF_DEBUG", "User data salvata")
+
                         RetrofitClient.updateAuthToken(loginResponse.accessToken)
+
                         Toast.makeText(this@LoginActivity, "Login effettuato con successo", Toast.LENGTH_SHORT).show()
                         goToMainActivity()
                     } else {

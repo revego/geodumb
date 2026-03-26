@@ -29,8 +29,8 @@ android {
         applicationId = "com.code4you.geodumb"
         minSdk = 24
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.1.4"
+        versionCode = 6
+        versionName = "1.1.5r"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // ⬇️ Questo ora funzionerà
