@@ -83,7 +83,9 @@ data class GoogleLoginResponse(
 
 data class UserDto(
     val email: String,
-    val name: String
+    val name: String,
+    val id: String? = null,  // nullable per retrocompatibilità
+    val google_id: String? = null  // ← aggiungi
 )
 
 data class UserData(
