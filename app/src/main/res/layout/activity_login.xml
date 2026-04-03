@@ -130,7 +130,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:enabled="false"
+            android:enabled="true"
             android:text="Continua con Google"
             android:textAllCaps="false"
             android:textSize="16sp"

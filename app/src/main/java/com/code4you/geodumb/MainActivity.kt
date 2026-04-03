@@ -466,13 +466,37 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
-    private fun setupToolbarAndProfile() {
+    private fun setupToolbarAndProfile2() {
         // Imposta il Toolbar come ActionBar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
         // Mostra l'immagine del profilo utente se connesso
         showFacebookProfilePicture()
+    }
+
+    private fun setupToolbarAndProfile() {
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)  // stesso file usato in LoginActivity
+        val userName = prefs.getString("user_name", "User")
+        val photoUrl = prefs.getString("user_photo_url", null)
+
+        val textView = findViewById<TextView>(R.id.txt_username)
+        val imageView = findViewById<ImageView>(R.id.img_account)
+
+        textView.text = userName
+
+        if (!photoUrl.isNullOrEmpty()) {
+            Picasso.get()
+                .load(photoUrl)
+                .error(R.drawable.account_generic)
+                .into(imageView)
+        } else {
+            showFacebookProfilePicture()
+            //imageView.setImageResource(R.drawable.account_generic)
+        }
     }
 
     private fun initializeViews() {
@@ -889,7 +913,19 @@ class MainActivity : AppCompatActivity(), LocationListener {
             putExtra(Intent.EXTRA_SUBJECT, "Report from GeoDumb")
             putExtra(Intent.EXTRA_STREAM, photoUri)
 
-            val userId = token?.userId ?: "UNKNOWN"
+            val userId = token?.userId
+                ?: getSharedPreferences("user_prefs", MODE_PRIVATE)
+                    .getString("user_id", null)
+                ?: "UNKNOWN"
+
+            Log.d("PREFS_DEBUG", "userId finale: $userId")
+            val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+            Log.d("PREFS_DEBUG", "auth_provider: ${prefs.getString("auth_provider", "null")}")
+            Log.d("PREFS_DEBUG", "user_id: ${prefs.getString("user_id", "null")}")
+            Log.d("PREFS_DEBUG", "access_token: ${prefs.getString("access_token", "null")?.take(20)}")
+            Log.d("PREFS_DEBUG", "auth_provider: ${prefs.getString("auth_provider", "null")}")
+
+            //val userId = token?.userId ?: "UNKNOWN"
 
             val address = latitude?.let { lat ->
                 longitude?.let { lon ->
