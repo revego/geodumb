@@ -9,7 +9,7 @@ object PrefsManager {
 
     fun getReportLimit(context: Context): Int {
         val prefs = context.getSharedPreferences(PREF_APP, Context.MODE_PRIVATE)
-        return prefs.getInt(KEY_REPORTS_LIMIT, 2)
+        return prefs.getInt(KEY_REPORTS_LIMIT, 100)
     }
 
     fun setReportLimit(context: Context, value: Int) {
