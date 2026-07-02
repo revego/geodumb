@@ -135,6 +135,7 @@ class LoginActivity : AppCompatActivity() {
         loginButton.registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
             override fun onSuccess(result: LoginResult) {
                 Log.d("FB_TRACE", "onSuccess: ${result.accessToken.token.take(20)}...")
+                Log.d("FB_TRACE", "onSuccess: ${result.accessToken.token.take(20)}...")
                 Log.d("FacebookLogin", "LoginSuccess: ${result.accessToken?.token}")
                 Log.d("FacebookLogin", "User ID: ${result.accessToken?.userId}")
                 Log.d("FacebookLogin", "Permissions: ${result.accessToken?.permissions}")
@@ -400,9 +401,12 @@ class LoginActivity : AppCompatActivity() {
 
                     Log.d("GOOGLE_LOGIN", "Token backend ricevuto: $appToken")
                     RetrofitClient.updateAuthToken(appToken ?: "")
+                    // ✅ Aggiungi QUI
+                    Toast.makeText(this@LoginActivity, "Login effettuato con successo", Toast.LENGTH_SHORT).show()
 
                     withContext(Dispatchers.Main) {
-                        goToMainActivity2(displayName, photoUrl)
+                        goToMainActivity()
+                        //goToMainActivity2(displayName, photoUrl)
                     }
                 } else {
                     // ❌ Backend risponde con errore → fallback cache
@@ -479,8 +483,9 @@ class LoginActivity : AppCompatActivity() {
                     // ← stessa chiamata che fa Facebook
                     RetrofitClient.updateAuthToken(appToken ?: "")
 
-                    withContext(Dispatchers.Main) {  // ← forza il main thread
-                        goToMainActivity2(displayName, photoUrl)
+                    withContext(Dispatchers.Main) {  // ← forza il main threa// d
+                        goToMainActivity()
+                        //goToMainActivity2(displayName, photoUrl)
                     }
                 } else {
                     Log.e("GOOGLE_LOGIN", "Errore backend: ${response.code()}")
@@ -515,8 +520,8 @@ class LoginActivity : AppCompatActivity() {
 
                     Log.d("GOOGLE_LOGIN", "Token backend ricevuto: $appToken")
                     Log.d("GOOGLE_LOGIN", "Lunghezza token: ${token?.length}")
-                    //goToMainActivity()
-                    goToMainActivity2(displayName, photoUrl)
+                    goToMainActivity()
+                    //goToMainActivity2(displayName, photoUrl)
                 } else {
                     Log.e("GOOGLE_LOGIN", "Errore backend: ${response.code()}")
                 }
@@ -540,10 +545,23 @@ class LoginActivity : AppCompatActivity() {
         //goToMainActivity(displayName, photoUrl)
     }
 
-    private fun goToMainActivity2(displayName: String?, photoUrl: String?) {
-        Log.d("LOGIN", "Avvio MainActivity con nome='$displayName'")
+    //private fun goToMainActivity2(displayName: String?, photoUrl: String?) {
+    //    Log.d("LOGIN", "Avvio MainActivity con nome='$displayName'")
+    //    val intent = Intent(this, MainActivity::class.java).apply {
+    //        putExtra("txt_username", displayName ?: "User")
+    //        if (!photoUrl.isNullOrEmpty()) {
+    //            putExtra("img_account", photoUrl)
+    //        }
+    //    }
+    //    startActivity(intent)
+    //    finish()
+    //}
+
+    private fun goToMainActivity(displayName: String? = null, photoUrl: String? = null) {
         val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra("txt_username", displayName ?: "User")
+            if (displayName != null) {
+                putExtra("txt_username", displayName)
+            }
             if (!photoUrl.isNullOrEmpty()) {
                 putExtra("img_account", photoUrl)
             }
@@ -552,7 +570,7 @@ class LoginActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun goToMainActivity() {
+    private fun goToMainActivity__() {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()

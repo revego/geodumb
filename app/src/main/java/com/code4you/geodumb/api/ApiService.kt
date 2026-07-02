@@ -252,7 +252,7 @@ interface ApiService {
     suspend fun getRateLimit(): RateLimitResponse
 
     // check server API
-    @GET("health")
+    @GET("/")
     suspend fun healthCheck(): Response<Void>
 
     //@DELETE("images/{imagePath}")
