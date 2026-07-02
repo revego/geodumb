@@ -22,6 +22,8 @@ import androidx.lifecycle.lifecycleScope
 import com.code4you.geodumb.api.FacebookLoginRequest
 import com.code4you.geodumb.api.GoogleLoginRequest
 import com.code4you.geodumb.api.RetrofitClient
+import com.code4you.geodumb.service.HealthCheckService
+import com.code4you.geodumb.service.ServerHealthChecker
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -58,6 +60,8 @@ class LoginActivity : AppCompatActivity() {
         Log.d("FB_TRACE", "ClientToken: ${getString(R.string.facebook_client_token)}")
 
         super.onCreate(savedInstanceState)
+        // Check if server API is up
+        startService(Intent(this, HealthCheckService::class.java))
         setContentView(R.layout.activity_login)
 
         //Google authenication
@@ -242,6 +246,20 @@ class LoginActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
+                // ✅ PRIMA controlla se server è vivo
+                if (!ServerHealthChecker.isServerAlive()) {
+                    // Server down → usa cache
+                    val cached = getCachedSession()
+                    if (cached != null) {
+                        Toast.makeText(this@LoginActivity, "Login offline", Toast.LENGTH_SHORT).show()
+                        goToMainActivity()
+                    } else {
+                        Toast.makeText(this@LoginActivity, "Servizio momentaneamente non disponibile", Toast.LENGTH_SHORT).show()
+                    }
+                    showLoading(false)
+                    return@launch
+                }
+
                 val result = RetrofitClient.apiService.facebookLogin(FacebookLoginRequest(facebookToken))
                 if (result.isSuccessful) {
                     val loginResponse = result.body()
@@ -262,15 +280,30 @@ class LoginActivity : AppCompatActivity() {
                         Toast.makeText(this@LoginActivity, "Login effettuato con successo", Toast.LENGTH_SHORT).show()
                         goToMainActivity()
                     } else {
-                        Toast.makeText(this@LoginActivity, "Errore: risposta vuota dal server", Toast.LENGTH_LONG).show()
+                        // ❌ Login fallito → usa cache
+                        val cached = getCachedSession()
+                        if (cached != null) {
+                            Toast.makeText(this@LoginActivity, "Login offline", Toast.LENGTH_SHORT).show()
+                            goToMainActivity()
+                        } else {
+                            Toast.makeText(this@LoginActivity, "Login fallito", Toast.LENGTH_LONG).show()
+                        }
                     }
-                } else {
-                    val errorMsg = result.errorBody()?.string() ?: "Errore sconosciuto"
-                    Toast.makeText(this@LoginActivity, "Login fallito: $errorMsg", Toast.LENGTH_LONG).show()
+                //} else {
+                //    val errorMsg = result.errorBody()?.string() ?: "Errore sconosciuto"
+                //    Toast.makeText(this@LoginActivity, "Login fallito: $errorMsg", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
-                Log.e("FacebookLogin", "Network error", e)
-                Toast.makeText(this@LoginActivity, "Errore di rete: ${e.message}", Toast.LENGTH_LONG).show()
+                // ❌ Login fallito → usa cache
+                val cached = getCachedSession()
+                if (cached != null) {
+                    Toast.makeText(this@LoginActivity, "Login offline", Toast.LENGTH_SHORT).show()
+                    goToMainActivity()
+                } else {
+                    Toast.makeText(this@LoginActivity, "Login fallito", Toast.LENGTH_LONG).show()
+                }
+                //Log.e("FacebookLogin", "Network error", e)
+                //Toast.makeText(this@LoginActivity, "Errore di rete: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
                 showLoading(false)
             }
@@ -325,6 +358,83 @@ class LoginActivity : AppCompatActivity() {
     }
 
     fun sendTokenToBackend(token: String?, displayName: String?, photoUrl: String?) {
+        Log.d("LOGIN", "sendTokenToBackend chiamato con token: $token")
+
+        val request = GoogleLoginRequest(google_token = token ?: "")
+
+        lifecycleScope.launch {
+            try {
+                // ✅ Controllo server vivo
+                if (!ServerHealthChecker.isServerAlive()) {
+                    val cached = getCachedSession()
+                    if (cached != null) {
+                        Toast.makeText(this@LoginActivity, "Login offline", Toast.LENGTH_SHORT).show()
+                        goToMainActivity()
+                    } else {
+                        Toast.makeText(this@LoginActivity, "Servizio momentaneamente non disponibile", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+
+                // ✅ Chiamata backend
+                val response = RetrofitClient.apiService.googleLogin(request)
+                Log.d("BACKEND_RESPONSE", "HTTP Code: ${response.code()}")
+
+                if (response.isSuccessful) {
+                    val appToken = response.body()?.token
+                    val userId = response.body()?.user?.id
+
+                    val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                    prefs.edit().apply {
+                        putString("access_token", appToken)
+                        putString("auth_token", appToken)
+                        putString("user_name", displayName ?: "User")
+                        putString("user_photo_url", photoUrl)
+                        putBoolean("is_logged_in", true)
+                        putString("auth_provider", "google")
+                        putString("user_id", response.body()?.user?.google_id
+                            ?: response.body()?.user?.email
+                            ?: "UNKNOWN")
+                        apply()
+                    }
+
+                    Log.d("GOOGLE_LOGIN", "Token backend ricevuto: $appToken")
+                    RetrofitClient.updateAuthToken(appToken ?: "")
+
+                    withContext(Dispatchers.Main) {
+                        goToMainActivity2(displayName, photoUrl)
+                    }
+                } else {
+                    // ❌ Backend risponde con errore → fallback cache
+                    val cached = getCachedSession()
+                    if (cached != null) {
+                        Toast.makeText(this@LoginActivity, "Login offline", Toast.LENGTH_SHORT).show()
+                        goToMainActivity()
+                    } else {
+                        Toast.makeText(this@LoginActivity, "Login fallito", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                // ❌ Network error → fallback cache
+                Log.e("GOOGLE_LOGIN", "Chiamata backend fallita", e)
+                val cached = getCachedSession()
+                if (cached != null) {
+                    Toast.makeText(this@LoginActivity, "Login offline", Toast.LENGTH_SHORT).show()
+                    goToMainActivity()
+                } else {
+                    Toast.makeText(this@LoginActivity, "Errore di rete", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    // ✅ Aggiungi questa funzione helper
+    private fun getCachedSession(): String? {
+        val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        return prefs.getString("access_token", null)
+    }
+
+    fun sendTokenToBackend5(token: String?, displayName: String?, photoUrl: String?) {
         Log.d("LOGIN", "sendTokenToBackend chiamato con token: $token")
 
         val request = GoogleLoginRequest(google_token = token ?: "")

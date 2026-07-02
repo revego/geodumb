@@ -39,6 +39,11 @@
         <meta-data android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token"/>
 
+        <service
+            android:name=".service.HealthCheckService"
+            android:enabled="true"
+            android:exported="false" />
+
         <!-- MainActivity: Filtro di avvio dell'app -->
         <activity
             android:name=".MainActivity"
