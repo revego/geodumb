@@ -94,6 +94,16 @@ data class UserData(
     val email: String?
 )
 
+data class RateLimitResponse(
+    val user_id: Int,
+    val count: Int,
+    val sent: Int,
+    val is_banned: Boolean,
+    val ban_reason: String?,
+    val banned_until: String?,
+    val updated_at: String?
+)
+
 // L'interfaccia dell'API definisce le chiamate
 interface ApiService {
 
@@ -234,6 +244,12 @@ interface ApiService {
         @Query("longitude") longitude: String,
         @Query("timestamp") timestamp: String
     ): Call<Void>
+    /**
+     * UTILITY: get user_rate_limit
+     */
+
+    @GET("users/me/rate-limit")
+    suspend fun getRateLimit(): RateLimitResponse
 
     //@DELETE("images/{imagePath}")
     //fun deleteImage(@Path("imagePath") imagePath: String): Call<Void>
