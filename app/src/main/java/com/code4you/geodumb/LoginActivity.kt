@@ -84,6 +84,7 @@ class LoginActivity : AppCompatActivity() {
             .build()
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
+        googleSignInClient.signOut()
 
         val googleButton = findViewById<MaterialButton>(R.id.google_sign_in_button)
         Log.d("BTN_STATE", "enabled=${googleButton.isEnabled} clickable=${googleButton.isClickable}")
@@ -301,7 +302,8 @@ class LoginActivity : AppCompatActivity() {
                 // Salva in SharedPreferences (simula l'autenticazione)
                 val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
                 prefs.edit().apply {
-                    putString("auth_token", "google_temp_token")   // token temporaneo
+                    putString("auth_token", idToken)   // token temporaneo
+                    //putString("auth_token", "google_temp_token")   // token temporaneo
                     putString("user_name", displayName ?: "User")
                     putString("user_photo_url", photoUrl)
                     putBoolean("is_logged_in", true)

@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -37,6 +38,8 @@ private lateinit var adapter: SentImagesAdapter
 private lateinit var recyclerView: RecyclerView
 private lateinit var textViewEmpty: TextView
 
+private lateinit var emptyStateContainer: LinearLayout
+
 class PhotoDetailActivity : AppCompatActivity() {
 
     private var recordId: Int? = null // ID del record da eliminare
@@ -59,7 +62,8 @@ class PhotoDetailActivity : AppCompatActivity() {
 
         // Recupera RecyclerView e TextView per lista vuota
         recyclerView = findViewById(R.id.recyclerView)
-        textViewEmpty = findViewById(R.id.textViewEmpty)
+        emptyStateContainer = findViewById(R.id.empty_state_container)
+        //textViewEmpty = findViewById(R.id.textViewEmpty)
 
         // 1️⃣ Recupera il path della foto dall'Intent
         val photoPath = intent.getStringExtra("photo_path")
