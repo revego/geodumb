@@ -257,7 +257,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onResume() {
         super.onResume()
         // 🔹 1. aggiorna stato dati
-        updateSentImagesCount()
+        //updateSentImagesCount()
         loadPublishedImagesCount()
 
         // 🔹 2. notifica utente (dipende da UI aggiornata)
@@ -293,8 +293,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 if (response.isSuccessful) {
                     val list = response.body() ?: emptyList()
 
-                    // Aggiorna contatore
+                    // Aggiorna contatore delle segnalazioni pubblicate
                     findViewById<TextView>(R.id.txt_images_published).text = list.size.toString()
+                    findViewById<TextView>(R.id.txt_images_sent).text = list.size.toString()
 
                     // Carica ultima segnalazione nella photo card
                     val last = list.maxByOrNull { it.imageTime ?: "" }
@@ -318,6 +319,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
                             ?: ""
                         txtTimestamp.visibility = View.VISIBLE
                     }
+                    // Se la lista è vuota, mostra un Toast e interrompi
+                    if (list.isEmpty()) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Ancora nessuna segnalazione. Scatta la tua prima foto!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@launch
+                    }
+                    // Notifica pe rla segnalazioen ricevuta
+                    showThankYouIfNeeded()
 
                 } else {
                     findViewById<TextView>(R.id.txt_images_published).text = "0"
@@ -325,6 +337,21 @@ class MainActivity : AppCompatActivity(), LocationListener {
             } catch (e: Exception) {
                 findViewById<TextView>(R.id.txt_images_published).text = "0"
             }
+        }
+    }
+
+    private fun showThankYouIfNeeded() {
+        val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("show_thank_you", false)) {
+            Toast.makeText(
+                this,  // Qui this è l'Activity, non serve @MainActivity
+                "Grazie! La tua segnalazione è stata inviata.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            prefs.edit()
+                .putBoolean("show_thank_you", false)
+                .apply()
         }
     }
 
@@ -1160,6 +1187,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
             Log.d(TAG, "Email sent with photo URI: $photoUri")
+
+            // Scrivo flag per ringraziare segnalazione
+            getSharedPreferences("user_prefs", MODE_PRIVATE)
+                .edit()
+                .putBoolean("show_thank_you", true)
+                .apply()
 
             // ✅ INCREMENTO CONTATORE
             incrementReports()
