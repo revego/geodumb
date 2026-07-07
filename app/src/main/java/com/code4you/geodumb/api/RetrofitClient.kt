@@ -234,12 +234,20 @@ object RetrofitClient {
     }
 
     @OptIn(ExperimentalEncodingApi::class)
-    fun isAuthenticated(): Boolean {
+    fun isAuthenticated__(): Boolean {
         val token = sharedPreferencesHelper?.getAuthToken() ?: return false
 
         // Log di debug (puoi rimuoverlo in produzione o metterlo condizionale)
         Log.d(TAG, "=== IS AUTHENTICATED CHECK ===")
+        Log.d(TAG, "Token recuperato da SharedPreferences: $token")
         Log.d(TAG, "Token preview: ${token.take(20)}...")
+
+        Log.d(TAG, "Token è null? ${token == null}")
+        Log.d(TAG, "Token è vuoto? ${token.isNullOrEmpty()}")
+        Log.d(TAG, "Token lunghezza: ${token?.length}")
+        Log.d(TAG, "Token primi 30: ${token?.take(30)}")
+        Log.d(TAG, "Token contiene 'temp': ${token?.contains("temp")}")
+        Log.d(TAG, "Token contiene 'fake': ${token?.contains("fake")}")
 
         // Rifiuta fake token in produzione (opzionale: solo debug)
         if (token.startsWith("fake_jwt")) {
@@ -248,7 +256,7 @@ object RetrofitClient {
         }
 
         // Controllo base formato JWT
-        if (token.length < 20 || token.count { it == '.' } != 2) {
+          if (token.length < 20 || token.count { it == '.' } != 2) {
             Log.w(TAG, "Formato JWT non valido")
             return false
         }
@@ -267,6 +275,28 @@ object RetrofitClient {
 
             val expiryTime = exp * 1000
             val isExpired = expiryTime < System.currentTimeMillis()
+            val now = System.currentTimeMillis()
+
+            Log.d(TAG, "JWT exp: $expiryTime ms | now: ${System.currentTimeMillis()} | expired: $isExpired")
+            // ============ LOG DETTAGLIATO ============
+            Log.d(TAG, "========== DETTAGLIO SCADENZA ==========")
+            Log.d(TAG, "exp (raw): $exp")
+            Log.d(TAG, "expiryTime (ms): $expiryTime")
+            Log.d(TAG, "now (ms): $now")
+            Log.d(TAG, "isExpired: $isExpired")
+
+            // Converti in date leggibili usando java.text.SimpleDateFormat
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+            val expiryDate = java.util.Date(expiryTime)
+            val nowDate = java.util.Date(now)
+
+            Log.d(TAG, "Scadenza: ${sdf.format(expiryDate)}")
+            Log.d(TAG, "Ora: ${sdf.format(nowDate)}")
+
+            val diffGiorni = (now - expiryTime) / (1000 * 60 * 60 * 24)
+            val diffOre = (now - expiryTime) / (1000 * 60 * 60)
+            Log.d(TAG, "Differenza: $diffOre ore ($diffGiorni giorni)")
+            // ========================================
 
             Log.d(TAG, "JWT exp: $expiryTime ms | now: ${System.currentTimeMillis()} | expired: $isExpired")
 
@@ -277,7 +307,7 @@ object RetrofitClient {
         }
     }
 
-    fun isAuthenticated_(): Boolean  {
+    fun isAuthenticated(): Boolean  {
         val hasValidToken = sharedPreferencesHelper?.isTokenValid() ?: false
         val isRealJWT = isJWTValid()
 

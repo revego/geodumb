@@ -83,13 +83,25 @@ data class GoogleLoginResponse(
 
 data class UserDto(
     val email: String,
-    val name: String
+    val name: String,
+    val id: String? = null,  // nullable per retrocompatibilità
+    val google_id: String? = null  // ← aggiungi
 )
 
 data class UserData(
     val id: String,
     val name: String,
     val email: String?
+)
+
+data class RateLimitResponse(
+    val user_id: Int,
+    val count: Int,
+    val sent: Int,
+    val is_banned: Boolean,
+    val ban_reason: String?,
+    val banned_until: String?,
+    val updated_at: String?
 )
 
 // L'interfaccia dell'API definisce le chiamate
@@ -232,6 +244,16 @@ interface ApiService {
         @Query("longitude") longitude: String,
         @Query("timestamp") timestamp: String
     ): Call<Void>
+    /**
+     * UTILITY: get user_rate_limit
+     */
+
+    @GET("users/me/rate-limit")
+    suspend fun getRateLimit(): RateLimitResponse
+
+    // check server API
+    @GET("/")
+    suspend fun healthCheck(): Response<Void>
 
     //@DELETE("images/{imagePath}")
     //fun deleteImage(@Path("imagePath") imagePath: String): Call<Void>
