@@ -41,6 +41,8 @@ import com.facebook.AccessToken
 import com.facebook.GraphRequest
 import com.facebook.login.LoginManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -73,6 +75,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private var photoUri: Uri? = null
     private var currentPhotoPath: String? = null
 
+    // ✅ AGGIUNGI QUI
+    private var selectedReportType: String = "rifiuti"
+
     // ← INSERISCI QUI il cameraLauncher
     private val cameraLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -83,6 +88,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 if (bitmap != null) {
                     val resizedBitmap = resizeBitmap(bitmap, 800, 800)
                     val compressedFile = compressBitmap(resizedBitmap, currentPhotoPath!!)
+
+                    // 🔹 MOSTRA IL BOTTOM SHEET DOPO AVER AGGIORNATO LA FOTO
+                    showReportTypeDialog()
+
                     updatePhotoCard(Uri.fromFile(compressedFile), compressedFile.absolutePath)
                     val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
                     Log.d(TAG, message)
@@ -114,8 +123,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         val btnCamera = findViewById<Button>(R.id.btn_take_photo)
 
-        btnCamera.isEnabled = canSendReport()
-        btnCamera.alpha = if (canSendReport()) 1.0f else 0.5f
+        //btnCamera.isEnabled = canSendReport()
+        //btnCamera.alpha = if (canSendReport()) 1.0f else 0.5f
 
 
         // VERIFICA AUTENTICAZIONE CON DUE STRATEGIE
@@ -125,6 +134,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
             finish()
             return  // Esci, non proseguire con onCreate
         }
+
+        loadRateLimit()
 
         // SE ARRIVI QUI → UTENTE AUTENTICATO
         setupToolbarAndProfile()
@@ -151,6 +162,36 @@ class MainActivity : AppCompatActivity(), LocationListener {
 // 1) AGGIUNGI questo metodo nella classe MainActivity
 //    (dopo toggleInstructions, prima di onResume)
 // ══════════════════════════════════════════════════════════════
+
+    private fun loadRateLimit() {
+
+        lifecycleScope.launch {
+
+            try {
+
+                val response =
+                    RetrofitClient.apiService.getRateLimit()
+
+                // SALVAIL LIMITE MASSIMO
+                PrefsManager.setReportLimit(
+                    this@MainActivity,
+                    response.count
+                )
+
+                // SALVA ANCHE IL CONTATORE ATTUALE
+                PrefsManager.setReportsSent(this@MainActivity,
+                    response.sent)  // <-- AGGIUNGI
+
+                // ✅ SINCRONIZZA IL CONTATORE LOCALE
+                val prefs = getSharedPreferences("app_prefs", 0)
+                prefs.edit().putInt("reports_sent", response.sent).apply()
+
+            } catch (e: Exception) {
+
+                Log.e("RATE_LIMIT", "Errore", e)
+            }
+        }
+    }
 
     private fun updatePhotoCard(uri: Uri, photoPath: String) {
         Log.d("PHOTO_CARD", "updatePhotoCard chiamata con path: $photoPath")
@@ -216,7 +257,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onResume() {
         super.onResume()
         // 🔹 1. aggiorna stato dati
-        updateSentImagesCount()
+        //updateSentImagesCount()
         loadPublishedImagesCount()
 
         // 🔹 2. notifica utente (dipende da UI aggiornata)
@@ -252,8 +293,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 if (response.isSuccessful) {
                     val list = response.body() ?: emptyList()
 
-                    // Aggiorna contatore
+                    // Aggiorna contatore delle segnalazioni pubblicate
                     findViewById<TextView>(R.id.txt_images_published).text = list.size.toString()
+                    findViewById<TextView>(R.id.txt_images_sent).text = list.size.toString()
 
                     // Carica ultima segnalazione nella photo card
                     val last = list.maxByOrNull { it.imageTime ?: "" }
@@ -277,6 +319,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
                             ?: ""
                         txtTimestamp.visibility = View.VISIBLE
                     }
+                    // Se la lista è vuota, mostra un Toast e interrompi
+                    if (list.isEmpty()) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Ancora nessuna segnalazione. Scatta la tua prima foto!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@launch
+                    }
+                    // Notifica pe rla segnalazioen ricevuta
+                    showThankYouIfNeeded()
 
                 } else {
                     findViewById<TextView>(R.id.txt_images_published).text = "0"
@@ -284,6 +337,21 @@ class MainActivity : AppCompatActivity(), LocationListener {
             } catch (e: Exception) {
                 findViewById<TextView>(R.id.txt_images_published).text = "0"
             }
+        }
+    }
+
+    private fun showThankYouIfNeeded() {
+        val prefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("show_thank_you", false)) {
+            Toast.makeText(
+                this,  // Qui this è l'Activity, non serve @MainActivity
+                "Grazie! La tua segnalazione è stata inviata.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            prefs.edit()
+                .putBoolean("show_thank_you", false)
+                .apply()
         }
     }
 
@@ -833,6 +901,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
+        // 🔍 DEBUG: stampa i valori
+        Log.d("DEBUG", "requestCode: $requestCode, REQUEST_IMAGE_CAPTURE: $REQUEST_IMAGE_CAPTURE, resultCode: $resultCode")
+
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             photoUri?.let { uri ->
                 val bitmap = BitmapFactory.decodeFile(currentPhotoPath)
@@ -845,6 +916,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
                     // ← NUOVO: aggiorna la photo card nel nuovo layout
                     updatePhotoCard(Uri.fromFile(compressedFile), compressedFile.absolutePath)
+                    // 🔹 MOSTRA IL BOTTOM SHEET QUI
+                    showReportTypeDialog()
 
                     val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
                     Log.d(TAG, message)
@@ -859,6 +932,144 @@ class MainActivity : AppCompatActivity(), LocationListener {
             }
         }
     }
+
+    // ✅ INSERISCI QUI LA NUOVA FUNZIONE
+    private fun sendReport() {
+        lifecycleScope.launch {
+            try {
+                // 1. Invia al backend
+                /*
+                val response = RetrofitClient.apiService.createRifiuti(
+                    CreateRifiutiRequest(
+                        latitude = latitude,
+                        longitude = longitude
+                    )
+                )
+
+                // 2. Verifica successo
+                if (response.isSuccessful) {  // ✅ Diretto
+                    loadRateLimit()
+                    }
+                 */
+
+                val message = "Here is the photo..."
+
+                // 3. Apri chooser solo se lastPhotoUri esiste
+                photoUri?.let {
+                    openEmailChooser(it, message)
+                }
+            } catch (e: Exception) {
+                Log.e("SEND", "Errore", e)
+            }
+        }
+    }
+
+    // 1. Prima definisci openEmailChooser()
+    private fun openEmailChooser(photoUri: Uri, message: String) {
+        val emailIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_EMAIL, arrayOf("code4you@gmail.com"))
+            putExtra(Intent.EXTRA_SUBJECT, "CityLog Segnalazione: ${selectedReportType.capitalize()}")
+            putExtra(Intent.EXTRA_TEXT, message)
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, arrayListOf(photoUri))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(emailIntent, "Invia email con..."))
+    }
+
+    private fun showReportTypeDialog() {
+        try {
+            val dialog = BottomSheetDialog(this)
+            val view = layoutInflater.inflate(R.layout.dialog_report_type, null)
+            dialog.setContentView(view)
+
+            // Aggiungi log per debug
+            Log.d("BOTTOM_SHEET", "BottomSheet creato, view: $view")
+
+            view.findViewById<MaterialCardView>(R.id.card_rifiuti)?.setOnClickListener {
+                Log.d("BOTTOM_SHEET", "Rifiuti selezionato")
+                selectedReportType = "rifiuti"
+                dialog.dismiss()
+                // ✅ RIUTILIZZA IL CODICE ESISTENTE DI sendEmailButton
+                photoUri?.let { uri ->
+                    //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                    sendEmail(uri, "",AccessToken.getCurrentAccessToken())  // ✅ Funzione esistente
+                }
+                //sendReport()
+            }
+
+            view.findViewById<MaterialCardView>(R.id.card_piantumazione)?.setOnClickListener {
+                Log.d("BOTTOM_SHEET", "Piantumazione selezionato")
+                selectedReportType = "piantumazione"
+                dialog.dismiss()
+                photoUri?.let { uri ->
+                    //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                    sendEmail(uri, "",AccessToken.getCurrentAccessToken())
+                }
+                //sendReport()
+            }
+
+            view.findViewById<MaterialCardView>(R.id.card_censimento)?.setOnClickListener {
+                Log.d("BOTTOM_SHEET", "Censimento selezionato")
+                selectedReportType = "censimento"
+                dialog.dismiss()
+                photoUri?.let { uri ->
+                    //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                    sendEmail(uri, "",AccessToken.getCurrentAccessToken())
+                }
+                //sendReport()
+            }
+
+            view.findViewById<MaterialCardView>(R.id.card_strade)?.setOnClickListener {
+                Log.d("BOTTOM_SHEET", "Strade selezionato")
+                selectedReportType = "strade"
+                dialog.dismiss()
+                photoUri?.let { uri ->
+                    //val message = "Here is the photo taken at coordinates: Latitude: $latitude, Longitude: $longitude, in ${getCityName(latitude, longitude)}."
+                    sendEmail(uri, "",AccessToken.getCurrentAccessToken())
+                }
+                //sendReport()
+            }
+
+            dialog.show()
+            Log.d("BOTTOM_SHEET", "BottomSheet mostrato")
+        } catch (e: Exception) {
+            Log.e("BOTTOM_SHEET", "Errore", e)
+            Toast.makeText(this, "Errore: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private fun showReportTypeDialog_() {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_report_type, null)
+        dialog.setContentView(view)
+
+        view.findViewById<MaterialCardView>(R.id.card_rifiuti).setOnClickListener {
+            selectedReportType = "rifiuti"
+            dialog.dismiss()
+            canSendReport()
+        }
+
+        view.findViewById<MaterialCardView>(R.id.card_piantumazione).setOnClickListener {
+            selectedReportType = "piantumazione"
+            dialog.dismiss()
+            canSendReport()
+        }
+
+        view.findViewById<MaterialCardView>(R.id.card_censimento).setOnClickListener {
+            selectedReportType = "censimento"
+            dialog.dismiss()
+            canSendReport()
+        }
+
+        view.findViewById<MaterialCardView>(R.id.card_strade).setOnClickListener {
+            selectedReportType = "strade"
+            dialog.dismiss()
+            canSendReport()
+        }
+
+        dialog.show()
+    }
+
 
     private fun resizeBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         val width = bitmap.width
@@ -939,12 +1150,20 @@ class MainActivity : AppCompatActivity(), LocationListener {
             val (x, y) = latLonToTile(latitude, longitude, 15)
             val mapUrl = "https://maps.citylog.cloud/hot/15/$x/$y.png?lang=en-US&ll=$longitude,$latitude&z=15&l=map&size=400,300&pt=$longitude,$latitude,pm2rdm"
 
+            // ✅ AGGIUNGI LA TIPOLOGIA QUI
+            val tipologia = selectedReportType.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+            }
+
             val fullMessage = """
-            **Description Audit:**
+            **Description Audit:**  
             Here is the photo taken at the following location:
 
             - **ImageID:** $uniqueID
             - **UserID:** $userId
+            
+            - **Tipologia segnalazione:** 
+              - Tipologia: $tipologia 
             
             - **Coordinates:**
               - Latitude: $latitude
@@ -968,6 +1187,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (emailIntent.resolveActivity(packageManager) != null) {
             startActivity(Intent.createChooser(emailIntent, "Send email using..."))
             Log.d(TAG, "Email sent with photo URI: $photoUri")
+
+            // Scrivo flag per ringraziare segnalazione
+            getSharedPreferences("user_prefs", MODE_PRIVATE)
+                .edit()
+                .putBoolean("show_thank_you", true)
+                .apply()
 
             // ✅ INCREMENTO CONTATORE
             incrementReports()

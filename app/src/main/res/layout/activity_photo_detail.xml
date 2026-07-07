@@ -6,32 +6,78 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
+    android:background="#F4FAF6"
     tools:context=".PhotoDetailActivity">
 
     <!-- Titolo -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Immagini Inviate"
+        android:text="📸 Le tue segnalazioni"
         android:textSize="20sp"
         android:textStyle="bold"
+        android:textColor="#1B2D27"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
-    <!-- RecyclerView per mostrare tutte le immagini -->
+    <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scrollbars="vertical" />
 
-    <!-- Messaggio quando non ci sono immagini -->
-    <TextView
-        android:id="@+id/textViewEmpty"
+    <!-- ✅ MESSAGGIO VUOTO MIGLIORATO -->
+    <LinearLayout
+        android:id="@+id/empty_state_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Nessuna immagine inviata"
+        android:orientation="vertical"
         android:gravity="center"
-        android:textSize="18sp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:padding="32dp">
+
+        <!-- Icona placeholder -->
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/ic_photo_placeholder"
+            android:contentDescription="Nessuna segnalazione"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Titolo vuoto -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🌱 Nessuna segnalazione"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#2D6A4F"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Descrizione -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Non hai ancora inviato immagini.\nScatta una foto e contribuisci a migliorare la città!"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:textColor="#5A7569"
+            android:lineSpacingMultiplier="1.5"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Bottone per iniziare -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_take_photo_empty"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="📷 Scatta una foto"
+            android:backgroundTint="#2D6A4F"
+            app:cornerRadius="12dp"
+            android:textColor="#FFFFFF"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp" />
+
+    </LinearLayout>
+
 </LinearLayout>
