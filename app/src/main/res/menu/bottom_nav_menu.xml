@@ -7,9 +7,9 @@
     <item
         android:id="@+id/navigation_dashboard"
         android:icon="@drawable/ic_dashboard"
-        android:title="Dashboard" />
+        android:title="Segnalazioni" />
     <item
         android:id="@+id/navigation_maps"
         android:icon="@drawable/ic_maps"
-        android:title="Maps" />
+        android:title="Mappa" />
 </menu>
