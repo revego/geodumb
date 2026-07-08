@@ -19,6 +19,7 @@ import com.code4you.geodumb.api.Result
 import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.api.safeApiCall
 import com.code4you.geodumb.databinding.ActivityPhotoDetailBinding
+import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
@@ -50,6 +51,10 @@ class PhotoDetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_photo_detail)
+
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         debugImageLists()
 
@@ -474,6 +479,16 @@ class PhotoDetailActivity : AppCompatActivity() {
                 startActivity(intent)
                 ImageLogger.logSentImages(this)
             }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish() // oppure NavUtils.navigateUpFromSameTask(this)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 

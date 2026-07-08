@@ -114,6 +114,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        // StatsDetailActivity
+        findViewById<LinearLayout>(R.id.stats_container).setOnClickListener {
+            startActivity(Intent(this, StatsDetailActivity::class.java))
+        }
 
         // Inizializza RetrofitClient
         try {
