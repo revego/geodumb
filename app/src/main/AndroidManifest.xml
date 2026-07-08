@@ -44,6 +44,10 @@
             android:enabled="true"
             android:exported="false" />
 
+        <activity
+            android:name=".StatsDetailActivity"
+            android:parentActivityName=".MainActivity" />
+
         <!-- MainActivity: Filtro di avvio dell'app -->
         <activity
             android:name=".MainActivity"
