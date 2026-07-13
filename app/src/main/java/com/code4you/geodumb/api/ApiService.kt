@@ -104,6 +104,14 @@ data class RateLimitResponse(
     val updated_at: String?
 )
 
+data class QuartiereInfo(
+    val quartiere: String,
+    @SerializedName("segnalazioni_totali") val segnalazioniTotali: Int,
+    @SerializedName("ultima_segnalazione")   val ultimaSegnalazione: String,
+    @SerializedName("latitudine")            val latitudine: String,
+    @SerializedName("longitudine")           val longitudine: String
+)
+
 // L'interfaccia dell'API definisce le chiamate
 interface ApiService {
 
@@ -255,13 +263,6 @@ interface ApiService {
     @GET("/")
     suspend fun healthCheck(): Response<Void>
 
-    //@DELETE("images/{imagePath}")
-    //fun deleteImage(@Path("imagePath") imagePath: String): Call<Void>
-
-    // Esempio di richiesta DELETE per inviare dati di un'immagine
-    //@DELETE("images/{id}")
-    //fun deleteImage(@Path("id") id: String): Call<Void>
-
     // Esempio: mantenuto per la funzione originale ora commentata
     // getMyPlaces ostituita da getMyPlacesWithAuth
     @GET("rifiuti/no-auth")
@@ -282,6 +283,12 @@ interface ApiService {
     // Versione più semplice per endpoint pubblico
     @GET("censimento/no-auth")
     suspend fun getMyPlacesNoAuth(): Response<List<MyPlace>>
+
+    /**
+     * QUARTIERI:
+     */
+    @GET("quartieri/no-auth")   // o il percorso esatto del tuo endpoint
+    suspend fun getQuartieri(): Response<List<QuartiereInfo>>
 }
 
 // Estensione per gestire errori in modo più semplice
