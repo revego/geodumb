@@ -45,6 +45,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".QuartieriActivity"
+            android:label="Quartieri"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".StatsDetailActivity"
             android:parentActivityName=".MainActivity" />
 
