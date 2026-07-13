@@ -603,7 +603,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             when (item.itemId) {
                 R.id.navigation_home -> {
                     // Avvia la DescriptionActivity quando viene selezionato "Home"
-                    val intent = Intent(this, DescriptionActivity::class.java)
+                    val intent = Intent(this, QuartieriActivity::class.java)
                     startActivity(intent)
                     true
                 }
