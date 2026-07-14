@@ -302,7 +302,7 @@ class LoginActivity : AppCompatActivity() {
                     goToMainActivity()
                 } else {
                     Toast.makeText(this@LoginActivity, "Login fallito", Toast.LENGTH_LONG).show()
-                }
+                 }
                 //Log.e("FacebookLogin", "Network error", e)
                 //Toast.makeText(this@LoginActivity, "Errore di rete: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
