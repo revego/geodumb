@@ -33,21 +33,44 @@
                 android:clickable="true"
                 android:focusable="true" />
 
-            <!-- Chip tipo — sovrapposto in alto a sinistra -->
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipType"
+            <!-- Contenitore orizzontale per i due chip (TIPO + QUARTIERE) -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start"
                 android:layout_margin="10dp"
-                android:text="TIPO"
-                android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:textSize="12sp"
-                app:chipBackgroundColor="@color/grey_600"
-                app:chipStrokeWidth="0dp"
-                app:rippleColor="@android:color/transparent"
-                app:ensureMinTouchTargetSize="false" />
+                android:orientation="horizontal">
+
+                <!-- Chip TIPO (esistente) -->
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TIPO"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="@color/grey_600"
+                    app:chipStrokeWidth="0dp"
+                    app:rippleColor="@android:color/transparent"
+                    app:ensureMinTouchTargetSize="false" />
+
+                <!-- Nuovo chip QUARTIERE -->
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipNeighborhood"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Quartiere"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="@color/cl_green_sage"
+                    app:chipStrokeWidth="0dp"
+                    app:rippleColor="@android:color/transparent"
+                    app:ensureMinTouchTargetSize="false" />
+
+            </LinearLayout>
 
             <!-- Hint "Vedi mappa" — sovrapposto in basso a destra -->
             <LinearLayout

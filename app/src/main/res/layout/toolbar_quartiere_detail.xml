@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingEnd="16dp">
+
+    <!-- Nome del quartiere (non cliccabile) -->
+    <TextView
+        android:id="@+id/title_quartiere_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:text="Quartiere" />
+
+    <!-- Contatore personale (cliccabile) -->
+    <TextView
+        android:id="@+id/title_my_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#B0E0E6"
+        android:textSize="14sp"
+        android:paddingStart="8dp"
+        android:paddingEnd="2dp"
+        android:text="0"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless" />
+
+    <!-- Separatore -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:text="/" />
+
+    <!-- Contatore totale (cliccabile) -->
+    <TextView
+        android:id="@+id/title_total_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:paddingStart="2dp"
+        android:paddingEnd="4dp"
+        android:text="0"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless" />
+</LinearLayout>

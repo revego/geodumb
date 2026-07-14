@@ -60,15 +60,31 @@ class QuartieriActivity : AppCompatActivity() {
         // Apri Info su Geodumb o mostra un dialog
         //}
 
-        adapter = QuartieriAdapter { quartiere ->
-            // azione per "Mostra mappa" (se vuoi aprirla)
-            val intent = Intent(this, MapsActivity::class.java).apply {
-                putExtra("nome", quartiere.quartiere)
-                putExtra("lat", quartiere.latitudine) // se hai coordinate
-                putExtra("lon", quartiere.longitudine)
+        adapter = QuartieriAdapter(
+            onItemClick = { quartiere ->
+                val intent = Intent(this, QuartiereDetailActivity::class.java)
+                intent.putExtra("quartiere", quartiere.quartiere)
+                startActivity(intent)
+            },
+            onMostraMappa = { quartiere ->
+                val intent = Intent(this, MapsActivity::class.java).apply {
+                    putExtra("nome", quartiere.quartiere)
+                    putExtra("lat", quartiere.latitudine)
+                    putExtra("lon", quartiere.longitudine)
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
-        }
+        )
+
+        //adapter = QuartieriAdapter { quartiere ->
+        //    // azione per "Mostra mappa" (se vuoi aprirla)
+        //    val intent = Intent(this, MapsActivity::class.java).apply {
+        //        putExtra("nome", quartiere.quartiere)
+        //        putExtra("lat", quartiere.latitudine) // se hai coordinate
+        //        putExtra("lon", quartiere.longitudine)
+        //        }
+        //        startActivity(intent)
+        //    }
 
         // Configura RecyclerView
         //adapter = QuartieriAdapter { quartiere ->

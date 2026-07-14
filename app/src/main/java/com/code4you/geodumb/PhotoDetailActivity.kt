@@ -101,7 +101,7 @@ class PhotoDetailActivity : AppCompatActivity() {
         //adapter.updateList(localImages)
 
         // INIZIALIZZA ADAPTER
-        adapter = SentImagesAdapter(this, sentImagesList)
+        adapter = SentImagesAdapter(this, sentImagesList, showQuartiereChip = true)
 
         // SETUP RECYCLERVIEW
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -226,7 +226,7 @@ class PhotoDetailActivity : AppCompatActivity() {
         //val sentImages = ImageLogger.getSentImages(this).sortedDescending().toMutableList()
 
         // Crea l'adapter
-        adapter = SentImagesAdapter(this, sentImagesList)
+        adapter = SentImagesAdapter(this, sentImagesList, showQuartiereChip = true)
         recyclerView.adapter = adapter
 
         Log.d("SETUP_RECYCLER", "Adapter creato con ${sentImagesList.size} immagini")

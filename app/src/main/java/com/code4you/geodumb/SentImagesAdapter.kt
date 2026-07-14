@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Typeface
 import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
@@ -30,9 +31,8 @@ import java.util.Locale
 
 class SentImagesAdapter(
     private val context: Context,
-    private val sentImages: MutableList<String>
-
-
+    private val sentImages: MutableList<String>,
+    private val showQuartiereChip: Boolean  // true per Segnalazioni, false per Quartier
 ) : RecyclerView.Adapter<SentImagesAdapter.ViewHolder>() {
 
     private var isUserAuthenticated: Boolean = false
@@ -53,6 +53,8 @@ class SentImagesAdapter(
         val mapButton: Button = view.findViewById(R.id.mapButton)
 
         val chipType: Chip = itemView.findViewById(R.id.chipType)
+
+        val chipQuartiere: Chip = itemView.findViewById(R.id.chipNeighborhood)
         val textViewRecordId: TextView = view.findViewById(R.id.textViewRecordId) // NUOVO
     }
 
@@ -121,6 +123,25 @@ class SentImagesAdapter(
         holder.chipType.setTypeface(holder.chipType.typeface, android.graphics.Typeface.BOLD)
         holder.chipType.chipBackgroundColor = ColorStateList.valueOf(chipColor)
         holder.chipType.setTextColor(textColor)
+
+        // ══════════════════════════════════════════════
+        // CHIP QUARTIERE – visibile solo se flag true
+        // ══════════════════════════════════════════════
+        if (showQuartiereChip) {
+            holder.chipQuartiere.visibility = View.VISIBLE
+            holder.chipQuartiere.text = item.quartiere?.takeIf { it.isNotBlank() } ?: "Non assegnato"
+            //holder.chipQuartiere.text = item.quartiere  // supponendo che il modello abbia questo campo
+
+            // Colore: VIOLA
+            holder.chipQuartiere.setChipBackgroundColor(
+                ContextCompat.getColorStateList(holder.itemView.context, R.color.pastel_gray_primary_container_dark)
+            )
+            holder.chipQuartiere.setTypeface(null,   Typeface.BOLD)
+        } else {
+            holder.chipQuartiere.visibility = View.GONE
+        }
+
+        //holder.chipQuartiere.text = item.quartiere
 
         // ── Visibilità bottone Elimina ──────────────────────────────────
         holder.deleteButton.visibility = if (isUserAuthenticated) View.VISIBLE else View.GONE

@@ -10,6 +10,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 
 class QuartieriAdapter(
+    private val onItemClick: (QuartiereInfo) -> Unit,
     private val onMostraMappa: (QuartiereInfo) -> Unit
 ) : RecyclerView.Adapter<QuartieriAdapter.ViewHolder>() {
 
@@ -36,6 +37,12 @@ class QuartieriAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val quartiere = items[position]
         holder.bind(quartiere, quartiere.quartiere == quartiereSelezionato)
+
+        // Click sull’intera card → apre il dettaglio
+        holder.itemView.setOnClickListener {
+            onItemClick(quartiere)
+        }
+        // Click sul pulsante mappa → già funzionante
         holder.buttonMappa.setOnClickListener {
             onMostraMappa(quartiere)
         }
