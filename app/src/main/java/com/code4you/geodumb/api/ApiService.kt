@@ -39,7 +39,8 @@ data class RifiutiResponse(
     @SerializedName("created_at") val createdAt: String?,
     @SerializedName("image_time") val imageTime: String?,
     @SerializedName("image_path") val imagePath: String? = null, // Aggiungi se backend lo fornisce
-    @SerializedName("imageId") val imageId: String?
+    @SerializedName("imageId") val imageId: String?,
+    @SerializedName("quartiere") val quartiere: String? = null
 )
 
 
@@ -289,6 +290,12 @@ interface ApiService {
      */
     @GET("quartieri/no-auth")   // o il percorso esatto del tuo endpoint
     suspend fun getQuartieri(): Response<List<QuartiereInfo>>
+
+    @GET("quartieri/segnalazioni-quartiere")
+    suspend fun getSegnalazioniByQuartiere
+        (@Query("quartiere") quartiere: String
+    ): Response<List<RifiutiResponse>>
+
 }
 
 // Estensione per gestire errori in modo più semplice
