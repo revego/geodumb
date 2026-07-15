@@ -103,7 +103,7 @@
                 android:layout_marginEnd="8dp" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_luci"
+                android:id="@+id/chip_piantumazioni"
                 style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -113,7 +113,17 @@
                 android:layout_marginEnd="8dp" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_altro"
+                android:id="@+id/chip_censimento"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⋯ 3"
+                android:enabled="false"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_tronchi"
                 style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

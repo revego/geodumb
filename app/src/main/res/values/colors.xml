@@ -123,9 +123,10 @@
 
     <!-- Chip Tipologie Segnalazione -->
     <color name="chip_rifiuti">#FDD835</color>
-    <color name="chip_piantumazione">#86EFAC</color>   <!-- green_400 già presente -->
-    <color name="chip_censimento_arboreo">#2E7D32</color>
-    <color name="chip_tronchi_tagliati">#5D4037</color>
+    <color name="chip_piantumazioni">#86EFAC</color>   <!-- green_400 già presente -->
+    <color name="chip_censimento">#2E7D32</color>
+    <color name="chip_tronchi">#5D4037</color>
+    <color name="chip_buche">#FF6B6B</color>           <!-- rosso (come rifiuti) o un colore a piacere -->
 
     <!-- Palette CityLog – verde foresta -->
     <color name="cl_green_deep">#2D6A4F</color>       <!-- toolbar, bottom nav, bottone primario -->

@@ -108,9 +108,9 @@ class SentImagesAdapter(
         Log.d("CHIP_DEBUG", "typo raw value: '${item.typo}'")
         val chipColor = when (item.typo?.uppercase()) {
             "RIFIUTI"            -> ContextCompat.getColor(context, R.color.chip_rifiuti)
-            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.chip_piantumazione)
-            "CENSIMENTO","CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, R.color.chip_censimento_arboreo)
-            "TRONCHI","TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, R.color.chip_tronchi_tagliati)
+            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.chip_piantumazioni)
+            "CENSIMENTO","CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, R.color.chip_censimento)
+            "TRONCHI","TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, R.color.chip_tronchi)
             else                 -> ContextCompat.getColor(context, R.color.grey_600)
         }
         val textColor = when (item.typo?.uppercase()) {
@@ -206,17 +206,17 @@ class SentImagesAdapter(
         // Colore chip in base al tipo
         val chipColor = when (item.typo?.uppercase()) {
             "RIFIUTI"            -> ContextCompat.getColor(context, R.color.chip_rifiuti)
-            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.chip_piantumazione)
-            "CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, R.color.chip_censimento_arboreo)
-            "TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, R.color.chip_tronchi_tagliati)
+            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.chip_piantumazioni)
+            "CENSIMENTO" -> ContextCompat.getColor(context, R.color.chip_censimento)
+            "TRONCHI"   -> ContextCompat.getColor(context, R.color.chip_tronchi)
             else                 -> ContextCompat.getColor(context, R.color.grey_600)
         }
         // Testo scuro su sfondi chiari, bianco su sfondi scuri
         val textColor = when (item.typo?.uppercase()) {
             "RIFIUTI"            -> ContextCompat.getColor(context, R.color.gray_800)
-            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.gray_800)
-            "CENSIMENTO ARBOREO" -> ContextCompat.getColor(context, android.R.color.white)
-            "TRONCHI TAGLIATI"   -> ContextCompat.getColor(context, android.R.color.white)
+            "PIANTUMAZIONI"      -> ContextCompat.getColor(context, R.color.gray_800)
+            "CENSIMENTO" -> ContextCompat.getColor(context, android.R.color.white)
+            "TRONCHI"   -> ContextCompat.getColor(context, android.R.color.white)
             else                 -> ContextCompat.getColor(context, android.R.color.white)
         }
         holder.chipType.setTypeface(holder.chipType.typeface, android.graphics.Typeface.BOLD)
