@@ -16,8 +16,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.code4you.geodumb.api.QuartiereInfo
 import com.code4you.geodumb.api.RetrofitClient
+import com.code4you.geodumb.api.RifiutiResponse
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 class QuartieriActivity : AppCompatActivity() {
@@ -125,6 +127,83 @@ class QuartieriActivity : AppCompatActivity() {
     }
 
     private fun loadQuartieriData() {
+        showLoading(true)
+        layoutEmpty.visibility = View.GONE
+
+        lifecycleScope.launch {
+            try {
+                // 1. Chiamata per le info di base dei quartieri (coordinate, ultima data)
+                val quartieriBaseDeferred = async { RetrofitClient.apiService.getQuartieri() }
+
+                // 2. Chiamate parallele per i conteggi
+                val rifiutiDeferred = async { RetrofitClient.apiService.getRifiutiNoAuth() }
+                val piantumazioniDeferred = async { RetrofitClient.apiService.getPiantumazioniNoAuth()}
+                val censimentoDeferred = async { RetrofitClient.apiService.getCensimentoNoAuth() }
+                val tronchiDeferred = async { RetrofitClient.apiService.getTronchiNoAuth() }
+                //val stradeDeferred = async { RetrofitClient.apiService.getStrade() }
+
+                // Attendiamo tutti i risultati
+                val quartieriBaseResponse = quartieriBaseDeferred.await()
+                val rifiuti = rifiutiDeferred.await().body() ?: emptyList()
+                val piantumazioni = piantumazioniDeferred.await().body() ?: emptyList()
+                val censimento = censimentoDeferred.await().body() ?: emptyList()
+                val tronchi = tronchiDeferred.await().body() ?: emptyList()
+                //val strade = stradeDeferred.await().body() ?: emptyList()
+
+                if (!quartieriBaseResponse.isSuccessful) {
+                    Toast.makeText(this@QuartieriActivity, "Errore nel recupero dei quartieri", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                // 3. Raggruppa conteggi per quartiere
+                val mappaConteggi = mutableMapOf<String, MutableMap<String, Int>>()
+
+                fun aggiungi(lista: List<RifiutiResponse>, tipo: String) {
+                    lista.groupBy { it.quartiere ?: "Non assegnato" }
+                        .forEach { (quartiere, items) ->
+                            mappaConteggi.getOrPut(quartiere) { mutableMapOf() }
+                                .merge(tipo, items.size, Int::plus)
+                        }
+                }
+
+                aggiungi(rifiuti, "rifiuti")
+                aggiungi(piantumazioni, "piantumazioni")
+                aggiungi(censimento, "censimento")
+                aggiungi(tronchi, "tronchi")
+                //aggiungi(strade, "strade")
+
+                // 4. Combina con i dati base
+                val quartieriBase = quartieriBaseResponse.body() ?: emptyList()
+                val quartieriFinali = quartieriBase.map { base ->
+                    val conteggi = mappaConteggi[base.quartiere] ?: emptyMap()
+                    base.copy(
+                        segnalazioniTotali = conteggi.values.sum(),
+                        conteggiTipi = conteggi
+                    )
+                }.sortedBy { it.quartiere }
+
+                // 5. Aggiorna adapter
+                adapter.submitList(quartieriFinali)
+                quartieriData = quartieriFinali
+
+                // 6. Popola dropdown
+                quartieriNames = quartieriFinali.map { it.quartiere }
+                val arrayAdapter = ArrayAdapter(
+                    this@QuartieriActivity,
+                    android.R.layout.simple_dropdown_item_1line,
+                    quartieriNames
+                )
+                (quartiereInputLayout.editText as? AutoCompleteTextView)?.setAdapter(arrayAdapter)
+
+            } catch (e: Exception) {
+                Toast.makeText(this@QuartieriActivity, "Errore di connessione", Toast.LENGTH_SHORT).show()
+            } finally {
+                showLoading(false)
+            }
+        }
+    }
+
+    private fun loadQuartieriData_() {
         showLoading(true)
         layoutEmpty.visibility = View.GONE
 

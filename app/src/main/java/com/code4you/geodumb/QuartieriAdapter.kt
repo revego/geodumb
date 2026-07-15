@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.code4you.geodumb.api.QuartiereInfo
 import com.google.android.material.button.MaterialButton
@@ -56,30 +57,67 @@ class QuartieriAdapter(
         val segnalazioniTotali: TextView = itemView.findViewById(R.id.text_segnalazioni_totali)
         val chipBuche: Chip = itemView.findViewById(R.id.chip_buche)
         val chipRifiuti: Chip = itemView.findViewById(R.id.chip_rifiuti)
-        val chipLuci: Chip = itemView.findViewById(R.id.chip_luci)
-        val chipAltro: Chip = itemView.findViewById(R.id.chip_altro)
+
+        val chipPiantumazioni: Chip = itemView.findViewById(R.id.chip_piantumazioni)
+        val chipCensimento: Chip = itemView.findViewById(R.id.chip_censimento)
+        val chipTronchi: Chip = itemView.findViewById(R.id.chip_tronchi)
         val textLatitudine = itemView.findViewById<TextView>(R.id.text_latitudine)
         val textLongitudine = itemView.findViewById<TextView>(R.id.text_longitudine)
         val buttonMappa: MaterialButton = itemView.findViewById(R.id.button_mappa)
 
+
         fun bind(quartiere: QuartiereInfo, isSelected: Boolean) {
+            // 1. Impostazione dei dati (nome, totale, etc.)
             nomeQuartiere.text = quartiere.quartiere
             ultimaData.text = quartiere.ultimaSegnalazione
             segnalazioniTotali.text = "${quartiere.segnalazioniTotali} segnalazioni"
+
+            // Conteggi per tipo
+            val conteggi = quartiere.conteggiTipi
+            // Usa conteggi per i chip...
+            val context = itemView.context
+
+            // Funzione helper per impostare colore e visibilità
+            fun setupChip(chip: Chip, tipo: String, colorRes: Int) {
+                val count = conteggi.getOrDefault(tipo, 0)
+                if (count > 0) {
+                    chip.visibility = View.VISIBLE
+                    //chip.text = "$icona $count"
+                    chip.setChipBackgroundColor(
+                        ContextCompat.getColorStateList(context, colorRes)
+                    )
+                    chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                } else {
+                    chip.visibility = View.GONE
+                }
+            }
+
+            // 2. Configurazione dei chip (visibilità, testo, colore)
+            setupChip(chipRifiuti, "rifiuti", R.color.chip_rifiuti)
+            setupChip(chipBuche, "buche", R.color.chip_buche)
+            setupChip(chipCensimento, "censimento", R.color.chip_censimento)
+            setupChip(chipPiantumazioni, "piantumazioni", R.color.chip_piantumazioni)
+            setupChip(chipTronchi, "tronchi", R.color.chip_tronchi)
 
             // Gestione chip (mostra solo quelli con conteggio > 0)
             //val tipi = quartiere.tipiCounts
             //chipBuche.visibility = if (tipi.size > 0 && tipi[0] > 0) View.VISIBLE else View.GONE
             //chipBuche.text = "🕳 ${tipi.getOrElse(0) { 0 }}"
 
-            //chipRifiuti.visibility = if (tipi.size > 1 && tipi[1] > 0) View.VISIBLE else View.GONE
-            //chipRifiuti.text = "🗑 ${tipi.getOrElse(1) { 0 }}"
+            chipRifiuti.visibility = if (conteggi.getOrDefault("rifiuti", 0) > 0) View.VISIBLE else View.GONE
+            chipRifiuti.text = "${conteggi.getOrDefault("rifiuti", 0)}"
 
-            //chipLuci.visibility = if (tipi.size > 2 && tipi[2] > 0) View.VISIBLE else View.GONE
-            //chipLuci.text = "💡 ${tipi.getOrElse(2) { 0 }}"
+            chipPiantumazioni.visibility = if (conteggi.getOrDefault("piantumazioni", 0) > 0) View.VISIBLE else View.GONE
+            chipPiantumazioni.text = "${conteggi.getOrDefault("piantumazioni", 0)}"
 
-            //chipAltro.visibility = if (tipi.size > 3 && tipi[3] > 0) View.VISIBLE else View.GONE
-            //chipAltro.text = "⋯ ${tipi.getOrElse(3) { 0 }}"
+            chipCensimento.visibility = if (conteggi.getOrDefault("censimento", 0) > 0) View.VISIBLE else View.GONE
+            chipCensimento.text = "${conteggi.getOrDefault("censimento", 0)}"
+
+            chipBuche.visibility = if (conteggi.getOrDefault("buche", 0) > 0) View.VISIBLE else View.GONE
+            chipBuche.text = "${conteggi.getOrDefault("buche", 0)}"
+
+            chipTronchi.visibility = if (conteggi.getOrDefault("tronchi", 0) > 0) View.VISIBLE else View.GONE
+            chipTronchi.text = "${conteggi.getOrDefault("tronchi", 0)}"
 
             textLatitudine.text = "Lat: ${quartiere.latitudine}"
             textLongitudine.text = "Lon: ${quartiere.longitudine}" 

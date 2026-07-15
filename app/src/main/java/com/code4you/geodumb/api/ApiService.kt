@@ -108,15 +108,16 @@ data class RateLimitResponse(
 data class QuartiereInfo(
     val quartiere: String,
     @SerializedName("segnalazioni_totali") val segnalazioniTotali: Int,
-    @SerializedName("ultima_segnalazione")   val ultimaSegnalazione: String,
-    @SerializedName("latitudine")            val latitudine: String,
-    @SerializedName("longitudine")           val longitudine: String
+    @SerializedName("ultima_segnalazione") val ultimaSegnalazione: String,
+    @SerializedName("latitudine") val latitudine: String,
+    @SerializedName("longitudine") val longitudine: String,
+    val conteggiTipi: Map<String, Int> = emptyMap()
 )
 
 // L'interfaccia dell'API definisce le chiamate
 interface ApiService {
 
-    // ============ AUTENTICAZIONE FACEBOOK ======
+    // ========== AUTENTICAZIONE FACEBOOK ======
     @POST("auth/facebook")
     suspend fun facebookLogin(
         @Body request: FacebookLoginRequest
@@ -137,48 +138,38 @@ interface ApiService {
         @Body statusUpdate: SegnalazioneStatusUpdate
     ): Call<Unit>
 
+    @DELETE("segnalazioni/{id}")
+    fun deleteSegnalazione(
+        @Path("id") id: Int
+    ): Call<Unit>
 
     // ============ RIFIUTI ENDPOINTS ============
 
-    /**
-     * Ottieni tutti i rifiuti (autenticato)
-     */
+    //Ottieni tutti i rifiuti (autenticato)
     @GET("rifiuti/")
     suspend fun getRifiuti(): Response<List<RifiutiResponse>>
 
-    @GET("users/me/segnalazioni")
-    suspend fun getMySegnalazioni(): Response<List<RifiutiResponse>>
-
-    /**
-     * Ottieni rifiuti senza autenticazione (per test)
-     */
+    //Ottieni rifiuti senza autenticazione (per test)
     @GET("rifiuti/no-auth")
     suspend fun getRifiutiNoAuth(
-        @Query("city") city: String? = null,
-        @Query("user_email") userEmail: String? = null
+        @Query("city") city: String? = null
+        //@Query("user_email") userEmail: String? = null
     ): Response<List<RifiutiResponse>>
 
-    /**
-     * Crea nuovo record rifiuti
-     */
+    //Crea nuovo record rifiuti
     @POST("rifiuti")
     suspend fun createRifiuti(
         @Body request: CreateRifiutiRequest
     ): Response<RifiutiResponse>
 
-    /**
-     * Aggiorna record rifiuti
-     */
+    //Aggiorna record rifiuti
     @PUT("rifiuti/{id}")
     suspend fun updateRifiuti(
         @Path("id") id: Int,
         @Body request: UpdateRifiutiRequest
     ): Response<RifiutiResponse>
 
-    /**
-     * Ottieni un singolo record rifiuto specifico in base a coordinate e timestamp
-     */
-
+    //Ottieni un singolo record rifiuto specifico in base a coordinate e timestamp
     @GET("rifiuti/legacy/resolve-image-id")
     fun resolveImageId(
         @Query("filename") filename: String
@@ -191,10 +182,7 @@ interface ApiService {
         @Query("longitude") longitude: String
     ): Call<RifiutiResponse>
 
-    /**
-     * RIFIUTI: Elimina record rifiuti
-     */
-
+    //Elimina record rifiuti
     @GET("rifiuti/legacy/resolve-image-id")
     fun resolveImageId2(
         @Query("filename") filename: String,
@@ -206,24 +194,10 @@ interface ApiService {
         @Path("id") id: Int
     ): Call<Unit>
 
-    @DELETE("segnalazioni/{id}")
-    fun deleteSegnalazione(
-        @Path("id") id: Int
-    ): Call<Unit>
-
-    // Esempio di richiesta GET per ottenere un elenco di immagini
-    @GET("images")
-    fun getImages(
-        @Query("page") page: Int,
-        @Query("limit") limit: Int
-    ): Call<List<Image>>
-
     @DELETE("rifiuti/{id}")
     suspend fun deleteRifiutiSuspend(
         @Path("id") id: Int
     ): Response<Unit>
-
-    // ============ FILTERED ENDPOINTS ============
 
     /**
      * Ottieni rifiuti filtrati per città
@@ -242,6 +216,22 @@ interface ApiService {
         @Query("limit") limit: Int = 20
     ): Response<List<RifiutiResponse>>
 
+    // Esempio: mantenuto per la funzione originale ora commentata
+    // getMyPlaces ostituita da getMyPlacesWithAuth
+    @GET("rifiuti/no-auth")
+    suspend fun getMyPlaces(
+        // Esempio: se l'API richiede un token di autorizzazione
+        @Header("Authorization") authToken: String
+    ): Response<List<MyPlace>> // Si aspetta una lista di oggetti MyPlace
+
+    // ============ UTILITY ENDPOINTS ============
+    // Esempio di richiesta GET per ottenere un elenco di immagini
+    @GET("images")
+    fun getImages(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int
+    ): Call<List<Image>>
+
     // Esempio di richiesta POST per inviare dati di un'immagine
     @POST("images")
     fun uploadImage(@Body image: Image): Call<Image>
@@ -253,24 +243,22 @@ interface ApiService {
         @Query("longitude") longitude: String,
         @Query("timestamp") timestamp: String
     ): Call<Void>
+
+    // ============ USERS ENDPOINTS ============
     /**
      * UTILITY: get user_rate_limit
      */
-
     @GET("users/me/rate-limit")
     suspend fun getRateLimit(): RateLimitResponse
+
+    @GET("users/me/segnalazioni")
+    suspend fun getMySegnalazioni(): Response<List<RifiutiResponse>>
 
     // check server API
     @GET("/")
     suspend fun healthCheck(): Response<Void>
 
-    // Esempio: mantenuto per la funzione originale ora commentata
-    // getMyPlaces ostituita da getMyPlacesWithAuth
-    @GET("rifiuti/no-auth")
-    suspend fun getMyPlaces(
-        // Esempio: se l'API richiede un token di autorizzazione
-        @Header("Authorization") authToken: String
-    ): Response<List<MyPlace>> // Si aspetta una lista di oggetti MyPlace
+    // ============ CENSIMENTO ENDPOINTS ============
 
     // Esempio: sefinisce un endpoint GET per recuperare la lista dei luoghi
     // Sostituisci "my-places-endpoint" con il vero percorso della tua API
@@ -285,6 +273,28 @@ interface ApiService {
     @GET("censimento/no-auth")
     suspend fun getMyPlacesNoAuth(): Response<List<MyPlace>>
 
+    @GET("censimento/no-auth")
+    suspend fun getCensimentoNoAuth(
+        @Query("city") city: String? = null
+    ): Response<List<RifiutiResponse>>
+
+    // ============ PIANTUMAZIONE ENDPOINTS ============
+
+    @GET("piantumazione/no-auth")
+    suspend fun getPiantumazioniNoAuth(
+        @Query("city") city: String? = null
+    ): Response<List<RifiutiResponse>>
+
+    // ============ STRADE ENDPOINTS ============
+
+    // ============ TRONCHI ENDPOINTS ============
+
+    @GET("tronchi/no-auth")
+    suspend fun getTronchiNoAuth(
+        @Query("city") city: String? = null
+    ): Response<List<RifiutiResponse>>
+
+    // ============ QUARTIERI ENDPOINTS ============
     /**
      * QUARTIERI:
      */
@@ -295,7 +305,6 @@ interface ApiService {
     suspend fun getSegnalazioniByQuartiere
         (@Query("quartiere") quartiere: String
     ): Response<List<RifiutiResponse>>
-
 }
 
 // Estensione per gestire errori in modo più semplice
