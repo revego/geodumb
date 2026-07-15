@@ -27,10 +27,16 @@ class QuartiereDetailActivity : AppCompatActivity() {
     private var listaPersonale: List<RifiutiResponse> = emptyList()
     private var mostraSoloMie = false
 
+    private var filtroTipo: String? = null
+    private var quartiereCorrente: String = ""
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_quartiere_detail)
+
+        filtroTipo = intent.getStringExtra("filtro_tipo")
+        quartiereCorrente = intent.getStringExtra("quartiere") ?: "Quartiere"
 
         val quartiereNome = intent.getStringExtra("quartiere") ?: "Quartiere"
 
@@ -61,6 +67,62 @@ class QuartiereDetailActivity : AppCompatActivity() {
     }
 
     private fun loadSegnalazioni(quartiere: String) {
+        lifecycleScope.launch {
+            try {
+                val completaDeferred = async { RetrofitClient.apiService.getSegnalazioniByQuartiere(quartiere) }
+                val personaleDeferred = async {
+                    try {
+                        RetrofitClient.apiService.getMySegnalazioni()
+                    } catch (e: Exception) {
+                        Log.w("AUTH_PERSONAL", "Errore chiamata personale", e)
+                        null
+                    }
+                }
+
+                val completaResponse = completaDeferred.await()
+                if (!completaResponse.isSuccessful) {
+                    Toast.makeText(this@QuartiereDetailActivity, "Errore nel recupero", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val listaCompletaRaw = completaResponse.body() ?: emptyList()
+                listaCompleta = if (filtroTipo != null) {
+                    listaCompletaRaw.filter { it.typo == filtroTipo }
+                } else {
+                    listaCompletaRaw
+                }
+
+                val personaleResponse = personaleDeferred.await()
+                if (personaleResponse?.isSuccessful == true) {
+                    val listaPersonaleRaw = personaleResponse.body()?.filter {
+                        it.quartiere?.equals(quartiere, ignoreCase = true) == true
+                    } ?: emptyList()
+                    listaPersonale = if (filtroTipo != null) {
+                        listaPersonaleRaw.filter { it.typo == filtroTipo }
+                    } else {
+                        listaPersonaleRaw
+                    }
+                } else {
+                    listaPersonale = emptyList()
+                    Log.w("AUTH_PERSONAL", "Impossibile recuperare le segnalazioni personali")
+                }
+
+                // Mostra la lista attuale (in base a mostraSoloMie)
+                val listaDaMostrare = if (mostraSoloMie) listaPersonale else listaCompleta
+                adapter.updateList(listaDaMostrare)
+
+                updateToolbarCounts(quartiere)
+
+                findViewById<TextView>(R.id.text_empty).visibility =
+                    if (listaDaMostrare.isEmpty()) View.VISIBLE else View.GONE
+
+            } catch (e: Exception) {
+                Toast.makeText(this@QuartiereDetailActivity, "Errore di connessione", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun loadSegnalazioni_(quartiere: String) {
         lifecycleScope.launch {
             try {
                 val completaDeferred = async { RetrofitClient.apiService.getSegnalazioniByQuartiere(quartiere) }
@@ -110,25 +172,33 @@ class QuartiereDetailActivity : AppCompatActivity() {
         val myCountView = customView.findViewById<TextView>(R.id.title_my_count)
         val totalCountView = customView.findViewById<TextView>(R.id.title_total_count)
 
-        nameView.text = quartiere
+        // Titolo con filtro se attivo
+        val titolo = if (filtroTipo != null) {
+            "$quartiere (${filtroTipo})"
+        } else {
+            quartiere
+        }
+        nameView.text = titolo
+
+        // Conteggi (già filtrati)
         myCountView.text = listaPersonale.size.toString()
         totalCountView.text = listaCompleta.size.toString()
 
-        // Evidenzia il numero attivo (opzionale: cambia colore)
+        // Colori per il contatore attivo
         if (mostraSoloMie) {
             myCountView.setTextColor(ContextCompat.getColor(this, android.R.color.white))
-            totalCountView.setTextColor(ContextCompat.getColor(this, R.color.grey_300))  // o un colore più tenue
+            totalCountView.setTextColor(ContextCompat.getColor(this, R.color.grey_300))
         } else {
             totalCountView.setTextColor(ContextCompat.getColor(this, android.R.color.white))
             myCountView.setTextColor(ContextCompat.getColor(this, R.color.grey_300))
         }
 
-        // Listener per i click
+        // Click per switchare tra Mie e Tutte
         myCountView.setOnClickListener {
             if (!mostraSoloMie) {
                 mostraSoloMie = true
                 adapter.updateList(listaPersonale)
-                updateToolbarCounts(quartiere)  // aggiorna colori
+                updateToolbarCounts(quartiere)
             }
         }
         totalCountView.setOnClickListener {
@@ -138,46 +208,17 @@ class QuartiereDetailActivity : AppCompatActivity() {
                 updateToolbarCounts(quartiere)
             }
         }
-    }
 
-    private fun loadSegnalazioni_(quartiere: String) {
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.apiService.getSegnalazioniByQuartiere(quartiere)
-                if (response.isSuccessful) {
-                    val segnalazioni = response.body() ?: emptyList()
-                    adapter.updateList(segnalazioni)
-                    findViewById<TextView>(R.id.text_empty).visibility =
-                        if (segnalazioni.isEmpty()) View.VISIBLE else View.GONE
-                } else {
-                    Toast.makeText(this@QuartiereDetailActivity, "Errore nel recupero", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this@QuartiereDetailActivity, "Errore di connessione", Toast.LENGTH_SHORT).show()
+        // Click sul nome per RESETTARE il filtro
+        nameView.setOnClickListener {
+            if (filtroTipo != null) {
+                resetFiltro()
             }
         }
     }
 
-    private fun loadSegnalazioni__(quartiere: String) {
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.apiService.getMySegnalazioni()
-                if (response.isSuccessful) {
-                    val tutte = response.body() ?: emptyList()
-                    // Filtra tutte le segnalazioni che contengono il nome del quartiere
-                    val filtrate = tutte.filter { segnalazione ->
-                        segnalazione.quartiere?.contains(quartiere, ignoreCase = true) == true
-                    }
-                    adapter.updateList(filtrate)
-
-                    findViewById<TextView>(R.id.text_empty).visibility =
-                        if (filtrate.isEmpty()) View.VISIBLE else View.GONE
-                } else {
-                    Toast.makeText(this@QuartiereDetailActivity, "Errore", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this@QuartiereDetailActivity, "Errore di connessione", Toast.LENGTH_SHORT).show()
-            }
-        }
+    private fun resetFiltro() {
+        filtroTipo = null
+        loadSegnalazioni(quartiereCorrente)
     }
 }

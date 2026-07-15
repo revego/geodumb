@@ -75,6 +75,13 @@ class QuartieriActivity : AppCompatActivity() {
                     putExtra("lon", quartiere.longitudine)
                 }
                 startActivity(intent)
+            },
+            onChipClick = { quartiere, tipo ->   // <-- TERZO LAMBDA
+                val intent = Intent(this, QuartiereDetailActivity::class.java).apply {
+                    putExtra("quartiere", quartiere)
+                    putExtra("filtro_tipo", tipo)
+                }
+                startActivity(intent)
             }
         )
 
