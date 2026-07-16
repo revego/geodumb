@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -34,11 +35,13 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityStatisticheQuartiereBinding
     private lateinit var adapterRecenti: RecentsAdapter
+    private lateinit var quartiereNome: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statistiche_quartiere)
 
+        // Toolbar
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.apply {
@@ -46,36 +49,19 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
             title = "Statistiche - ${intent.getStringExtra("quartiere_nome") ?: ""}"
         }
 
-        val nome = intent.getStringExtra("quartiere_nome") ?: ""
-        val totale = intent.getIntExtra("totale", 0)
-        val conteggi = intent.getSerializableExtra("conteggi") as? Map<String, Int> ?: emptyMap()
-        val ultima = intent.getStringExtra("ultima_data") ?: ""
+        // 1. Leggi solo il nome del quartiere
+        quartiereNome = intent.getStringExtra("quartiere_nome") ?: ""
 
-        // Popola le TextView
-        findViewById<TextView>(R.id.tv_nome).text = nome
-        findViewById<TextView>(R.id.tv_totale).text = "Totale: $totale"
-        findViewById<TextView>(R.id.tv_ultima).text = "Ultima: $ultima"
-
-        // Container per i chip (come già implementato)
-        val container = findViewById<LinearLayout>(R.id.container_barre)
-        if (conteggi.isNotEmpty()) {
-            conteggi.forEach { (tipo, count) ->
-                val chip = createChip(tipo, count)
-                container.addView(chip)
-            }
-        } else {
-            findViewById<TextView>(R.id.tv_empty_state).visibility = View.VISIBLE
-        }
-
-        // Setup RecyclerView per le recenti
+        // 2. Inizializza RecyclerView per le recenti
         val recycler = findViewById<RecyclerView>(R.id.recycler_recenti)
         recycler.layoutManager = LinearLayoutManager(this)
         adapterRecenti = RecentsAdapter()
         recycler.adapter = adapterRecenti
 
-        // Carica le segnalazioni del quartiere per calcoli avanzati
-        loadSegnalazioniQuartiere(nome)
+        // 3. Carica i dati da API
+        loadSegnalazioniQuartiere(quartiereNome)
     }
+
 
     private fun aggiornaBarraDistribuzione(conteggi: Map<String, Int>) {
         val barra = findViewById<LinearLayout>(R.id.barra_distribuzione)
@@ -115,16 +101,24 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun loadSegnalazioniQuartiere(quartiere: String) {
+        val progressBar = findViewById<ProgressBar>(R.id.progress_loading)
+        progressBar.visibility = View.VISIBLE
+
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.getSegnalazioniByQuartiere(quartiere)
+                progressBar.visibility = View.GONE
                 if (response.isSuccessful) {
                     val lista = response.body() ?: emptyList()
                     aggiornaStatisticheAvanzate(lista)
+                } else {
+                    Toast.makeText(this@StatisticheQuartiereActivity, "Errore nel recupero", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@StatisticheQuartiereActivity, "Errore nel caricamento", Toast.LENGTH_SHORT).show()
+                progressBar.visibility = View.GONE
+                Toast.makeText(this@StatisticheQuartiereActivity, "Errore di connessione", Toast.LENGTH_SHORT).show()
             }
         }
     }
