@@ -1,5 +1,6 @@
 package com.code4you.geodumb
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -66,6 +67,8 @@ class QuartieriAdapter(
         val textLongitudine = itemView.findViewById<TextView>(R.id.text_longitudine)
         val buttonMappa: MaterialButton = itemView.findViewById(R.id.button_mappa)
 
+        val buttonStatistiche: MaterialButton = itemView.findViewById(R.id.button_statistiche)
+
         fun bind(quartiere: QuartiereInfo, isSelected: Boolean) {
             nomeQuartiere.text = quartiere.quartiere
             ultimaData.text = quartiere.ultimaSegnalazione
@@ -73,6 +76,19 @@ class QuartieriAdapter(
 
             val conteggi = quartiere.conteggiTipi
             val context = itemView.context
+
+            buttonStatistiche.setOnClickListener {
+                // Passa il quartiere all'Activity delle statistiche
+                val intent = Intent(context, StatisticheQuartiereActivity::class.java).apply {
+                    putExtra("quartiere_nome", quartiere.quartiere)
+                    putExtra("totale", quartiere.segnalazioniTotali)
+                    putExtra("conteggi", quartiere.conteggiTipi.toMap() as HashMap<String, Int>) // se serializzabile
+                    putExtra("ultima_data", quartiere.ultimaSegnalazione)
+                    putExtra("lat", quartiere.latitudine)
+                    putExtra("lon", quartiere.longitudine)
+                }
+                context.startActivity(intent)
+            }
 
             // 1. Funzione per configurare TUTTO (visibilità, testo, colore)
             fun setupChip(chip: Chip, tipo: String, colorRes: Int) {

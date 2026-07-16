@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F4FAF6"
+    android:fitsSystemWindows="true"
+    tools:context=".StatisticheQuartiereActivity">
+
+    <!-- Toolbar identica a StatsDetailActivity -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#2D6A4F"
+        app:title="Statistiche Quartiere"
+        app:titleTextColor="#FFFFFF"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:navigationIconTint="#FFFFFF"
+        android:fitsSystemWindows="true"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="start">
+
+            <!-- Titolo sezione -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Riepilogo segnalazioni"
+                android:textColor="#1B2D27"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Nome quartiere -->
+            <TextView
+                android:id="@+id/tv_nome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nome quartiere"
+                android:textColor="#1B2D27"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/tv_totale"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Totale: 0"
+                android:textColor="#1B2D27"
+                android:textSize="16sp"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/tv_ultima"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ultima: -"
+                android:textColor="#5A7569"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+
+            <!-- Distribuzione per tipologia -->
+            <TextView
+                android:text="Distribuzione per tipologia:"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#1B2D27"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Container per i chip delle tipologie -->
+            <!--LinearLayout
+                android:id="@+id/container_chip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp" /-->
+
+            <LinearLayout
+                android:id="@+id/container_barre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp" />
+
+            <LinearLayout
+                android:id="@+id/barra_distribuzione"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:orientation="horizontal"
+                android:weightSum="100"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/shape_rounded_corner_gray" />
+
+            <!-- Grafico a torta -->
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/pieChart"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                tools:ignore="MissingClass" />
+
+            <!-- Medie settimanale e mensile -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/tv_media_settimana"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="#2D6A4F" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Media/settimana"
+                        android:textColor="#5A7569"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/tv_media_mese"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="#1A6B8A" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Media/mese"
+                        android:textColor="#5A7569"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Ultime segnalazioni -->
+            <TextView
+                android:text="Ultime segnalazioni"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#1B2D27"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_recenti"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+
+            <!-- Stato vuoto -->
+            <TextView
+                android:id="@+id/tv_empty_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nessuna segnalazione in questo quartiere"
+                android:textColor="#9DC4B0"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginTop="20dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
