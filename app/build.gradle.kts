@@ -5,6 +5,10 @@ plugins {
 }
 
 buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
     dependencies {
         classpath("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1")
     }
@@ -127,6 +131,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 
     implementation("androidx.recyclerview:recyclerview:1.3.0")
+
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 
     // Retrofit
     //implementation("com.squareup.retrofit2:retrofit:2.9.0")

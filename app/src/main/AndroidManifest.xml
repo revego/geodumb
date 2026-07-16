@@ -44,6 +44,8 @@
             android:enabled="true"
             android:exported="false" />
 
+        <activity android:name=".StatisticheQuartiereActivity" />
+
         <activity
             android:name=".QuartiereDetailActivity"
             android:parentActivityName=".QuartieriActivity" />
@@ -77,9 +79,9 @@
         <activity
             android:name=".MapsActivity"
             android:exported="false" />
-        <activity
+        <!--activity
             android:name=".DescriptionActivity"
-            android:exported="false" />
+            android:exported="false" /-->
         <activity
             android:name=".PhotoDetailActivity"
             android:exported="false" />
