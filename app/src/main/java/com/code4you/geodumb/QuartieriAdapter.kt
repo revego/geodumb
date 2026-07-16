@@ -78,14 +78,8 @@ class QuartieriAdapter(
             val context = itemView.context
 
             buttonStatistiche.setOnClickListener {
-                // Passa il quartiere all'Activity delle statistiche
                 val intent = Intent(context, StatisticheQuartiereActivity::class.java).apply {
                     putExtra("quartiere_nome", quartiere.quartiere)
-                    putExtra("totale", quartiere.segnalazioniTotali)
-                    putExtra("conteggi", quartiere.conteggiTipi.toMap() as HashMap<String, Int>) // se serializzabile
-                    putExtra("ultima_data", quartiere.ultimaSegnalazione)
-                    putExtra("lat", quartiere.latitudine)
-                    putExtra("lon", quartiere.longitudine)
                 }
                 context.startActivity(intent)
             }
