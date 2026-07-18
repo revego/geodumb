@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.api.RifiutiResponse
+import com.code4you.geodumb.api.UserContribution
+import com.code4you.geodumb.api.UserDetail
 import com.code4you.geodumb.databinding.ActivityStatisticheQuartiereBinding
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
@@ -37,9 +39,16 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
     private lateinit var adapterRecenti: RecentsAdapter
     private lateinit var quartiereNome: String
 
+    private lateinit var adapterTopUtenti: TopUtentiAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statistiche_quartiere)
+
+        val recyclerTop = findViewById<RecyclerView>(R.id.recycler_top_utenti)
+        recyclerTop.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        adapterTopUtenti = TopUtentiAdapter()
+        recyclerTop.adapter = adapterTopUtenti
 
         // Toolbar
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
@@ -123,7 +132,7 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
         }
     }
 
-    private fun aggiornaStatisticheAvanzate(lista: List<RifiutiResponse>) {
+    private suspend fun aggiornaStatisticheAvanzate(lista: List<RifiutiResponse>) {
         // 1. Grafico a torta (usa i conteggi già passati, ma se vuoi usare la lista per avere dati più precisi)
         val conteggi = lista.groupBy { it.typo ?: "altro" }.mapValues { it.value.size }
         aggiornaBarreTipologia(conteggi)
@@ -143,6 +152,78 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
         // 3. Ultime segnalazioni (le 5 più recenti)
         val ultime = lista.sortedByDescending { it.imageTime }.take(5)
         adapterRecenti.submitList(ultime)
+
+        // 4. TOP CONTRIBUTORI
+        //val topUsers = lista.groupBy { it.userId }
+        //    .mapValues { it.value.size }
+        //    .entries
+        //    .sortedByDescending { it.value }
+        //    .take(5)
+        //    .map { it.key to it.value }
+
+        val topUsers = lista.groupBy { it.userId }
+            .mapValues { it.value.size }
+            .entries
+            .sortedByDescending { it.value }
+            .take(5)
+            .map { it.key to it.value }   // List<Pair<Int?, Int>>
+            //.filter { it.first != null }
+
+        val userDetailsMap = mutableMapOf<Int, UserDetail>()
+        topUsers.filter { it.first != null }.forEach { (userId, _) ->
+            userId?.let {
+                try {
+                    userDetailsMap[it] = RetrofitClient.apiService.getUser(it)
+                } catch (e: Exception) { }
+            }
+        }
+
+        val contributions = topUsers.map { (userId, count) ->
+            if (userId == null) {
+                UserContribution(null, "Anonimo", null, count)
+            } else {
+                val detail = userDetailsMap[userId]
+                UserContribution(
+                    userId = userId,
+                    userName = detail?.name?.takeIf { it.isNotBlank() } ?: "Anonimo",
+                    //userName = detail?.name ?: "Utente {$userId}",
+                    userAvatar = detail?.avatarUrl,
+                    count = count
+                )
+            }
+        }.sortedByDescending { it.count }
+
+        // Recupera i dettagli per ogni userId
+        //val userDetailsMap = mutableMapOf<Int, UserDetail>()
+        //topUsers.forEach { (userId, _) ->   // destrutturazione: userId = Pair.first
+        //    if (userId != null) {
+        //        try {
+        //            Log.d("STATS", "Richiesta dettagli per userId: $userId")
+        //            val detail = RetrofitClient.apiService.getUser(userId)
+        //            userDetailsMap[userId] = detail
+        //            Log.d("STATS", "Dettagli ricevuti: ${detail.name}, avatar: ${detail.avatarUrl}")
+        //        } catch (e: Exception) {
+                    // fallback
+        //        }
+        //    }
+        //}
+
+        // Costruisci la lista per l'adapter
+        //val contributions = topUsers.map { (userId, count) ->   // destrutturazione completa
+        //    val detail = userId?.let { userDetailsMap[userId] }
+        //    Log.d("USER_DETAIL", "UserId: $userId, name: ${detail?.name}, username: ${detail?.username}")
+        //    UserContribution(
+        //        userId = userId,
+        //        userName = detail?.name
+        //            ?: detail?.username
+        //            ?: "Utente ${userId ?: "anonimo"}",
+        //        userAvatar = detail?.avatarUrl,
+        //        count = count
+        //    )
+        //}
+
+        adapterTopUtenti.submitList(contributions)
+        //adapterTopUtenti.submitList(topUsers)
     }
 
     private fun setupPieChart__(conteggi: Map<String, Int>) {
