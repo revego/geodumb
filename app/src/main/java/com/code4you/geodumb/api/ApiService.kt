@@ -114,6 +114,20 @@ data class QuartiereInfo(
     val conteggiTipi: Map<String, Int> = emptyMap()
 )
 
+data class UserDetail(
+    val id: Int,
+    @SerializedName("username") val username: String?,
+    val name: String,
+    @SerializedName("avatar_url") val avatarUrl: String? = null  // opzionale
+)
+
+data class UserContribution(
+    val userId: Int?,
+    val userName: String,
+    val userAvatar: String?,
+    val count: Int
+)
+
 // L'interfaccia dell'API definisce le chiamate
 interface ApiService {
 
@@ -250,6 +264,9 @@ interface ApiService {
      */
     @GET("users/me/rate-limit")
     suspend fun getRateLimit(): RateLimitResponse
+
+    @GET("users/{user_id}")
+    suspend fun getUser(@Path("user_id") userId: Int): UserDetail
 
     @GET("users/me/segnalazioni")
     suspend fun getMySegnalazioni(): Response<List<RifiutiResponse>>
