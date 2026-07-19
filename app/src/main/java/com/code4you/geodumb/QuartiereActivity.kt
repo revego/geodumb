@@ -147,7 +147,7 @@ class QuartieriActivity : AppCompatActivity() {
                 val piantumazioniDeferred = async { RetrofitClient.apiService.getPiantumazioniNoAuth()}
                 val censimentoDeferred = async { RetrofitClient.apiService.getCensimentoNoAuth() }
                 val tronchiDeferred = async { RetrofitClient.apiService.getTronchiNoAuth() }
-                //val stradeDeferred = async { RetrofitClient.apiService.getStrade() }
+                val stradeDeferred = async { RetrofitClient.apiService.getStradeNoAuth() }
 
                 // Attendiamo tutti i risultati
                 val quartieriBaseResponse = quartieriBaseDeferred.await()
@@ -155,7 +155,7 @@ class QuartieriActivity : AppCompatActivity() {
                 val piantumazioni = piantumazioniDeferred.await().body() ?: emptyList()
                 val censimento = censimentoDeferred.await().body() ?: emptyList()
                 val tronchi = tronchiDeferred.await().body() ?: emptyList()
-                //val strade = stradeDeferred.await().body() ?: emptyList()
+                val strade = stradeDeferred.await().body() ?: emptyList()
 
                 if (!quartieriBaseResponse.isSuccessful) {
                     Toast.makeText(this@QuartieriActivity, "Errore nel recupero dei quartieri", Toast.LENGTH_SHORT).show()
@@ -174,9 +174,10 @@ class QuartieriActivity : AppCompatActivity() {
                 }
 
                 aggiungi(rifiuti, "rifiuti")
-                aggiungi(piantumazioni, "piantumazioni")
+                aggiungi(piantumazioni, "piantumazione")
                 aggiungi(censimento, "censimento")
                 aggiungi(tronchi, "tronchi")
+                aggiungi(strade, "strade")
                 //aggiungi(strade, "strade")
 
                 // 4. Combina con i dati base

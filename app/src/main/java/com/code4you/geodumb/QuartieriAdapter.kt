@@ -101,20 +101,20 @@ class QuartieriAdapter(
 
             // 2. Configura TUTTI i chip (USA SOLO setupChip)
             setupChip(chipRifiuti, "rifiuti", R.color.chip_rifiuti)
-            setupChip(chipBuche, "buche", R.color.chip_buche)
+            setupChip(chipBuche, "strade", R.color.chip_buche)
             setupChip(chipCensimento, "censimento", R.color.chip_censimento)
-            setupChip(chipPiantumazioni, "piantumazioni", R.color.chip_piantumazioni)
+            setupChip(chipPiantumazioni, "piantumazione", R.color.chip_piantumazioni)
             setupChip(chipTronchi, "tronchi", R.color.chip_tronchi)
 
             // 3. CLICK SUI CHIP (DOPO la configurazione)
             chipPiantumazioni.setOnClickListener {
-                onChipClick(quartiere.quartiere, "piantumazioni")
+                onChipClick(quartiere.quartiere, "piantumazione")
             }
             chipRifiuti.setOnClickListener {
                 onChipClick(quartiere.quartiere, "rifiuti")
             }
             chipBuche.setOnClickListener {
-                onChipClick(quartiere.quartiere, "buche")
+                onChipClick(quartiere.quartiere, "strade")
             }
             chipCensimento.setOnClickListener {
                 onChipClick(quartiere.quartiere, "censimento")
