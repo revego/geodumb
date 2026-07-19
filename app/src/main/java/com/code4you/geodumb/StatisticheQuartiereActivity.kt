@@ -24,9 +24,12 @@ import com.code4you.geodumb.api.UserContribution
 import com.code4you.geodumb.api.UserDetail
 import com.code4you.geodumb.databinding.ActivityStatisticheQuartiereBinding
 import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.highlight.Highlight
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.chip.Chip
 import kotlinx.coroutines.launch
@@ -41,6 +44,8 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
     private lateinit var quartiereNome: String
 
     private lateinit var adapterTopUtenti: TopUtentiAdapter
+
+    private var listaCompletaSegnalazioni: List<RifiutiResponse> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,10 +90,10 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
 
         val colori = mapOf(
             "rifiuti" to R.color.chip_rifiuti,
-            "piantumazioni" to R.color.chip_piantumazioni,
+            "piantumazione" to R.color.chip_piantumazioni,
             "tronchi" to R.color.chip_tronchi,
             "censimento" to R.color.chip_censimento,
-            "buche" to R.color.chip_buche
+            "strade" to R.color.chip_buche
         )
 
         conteggi.forEach { (tipo, count) ->
@@ -101,11 +106,6 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
                         percentuale  // weight proporzionale
                     )
                     setBackgroundColor(Color.TRANSPARENT)
-                    //setBackgroundColor(
-                    //    ContextCompat.getColor(this@StatisticheQuartiereActivity,
-                    //        colori[tipo] ?: R.color.grey_300
-                    //    )
-                    //)
                 }
                 barra.addView(view)
             }
@@ -135,6 +135,8 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
     private suspend fun aggiornaStatisticheAvanzate(lista: List<RifiutiResponse>) {
         // 1. Grafico a torta (usa i conteggi già passati, ma se vuoi usare la lista per avere dati più precisi)
         val conteggi = lista.groupBy { it.typo ?: "altro" }.mapValues { it.value.size }
+        listaCompletaSegnalazioni = lista
+
         aggiornaBarreTipologia(conteggi)
         //aggiornaBarraDistribuzione(conteggi)
         setupPieChart(conteggi)
@@ -222,12 +224,12 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
         val max = 100
         val colori = mapOf(
             "rifiuti" to R.color.chip_rifiuti,
-            "piantumazioni" to R.color.chip_piantumazioni,
+            "piantumazione" to R.color.chip_piantumazioni,
             "tronchi" to R.color.chip_tronchi,
             "censimento" to R.color.chip_censimento,
-            "buche" to R.color.chip_buche
+            "strade" to R.color.chip_buche
         )
-        val tipiOrdinati = listOf("rifiuti", "piantumazioni", "tronchi", "censimento", "buche")
+        val tipiOrdinati = listOf("rifiuti", "piantumazione", "tronchi", "censimento", "strade")
 
         tipiOrdinati.forEach { tipo ->
             val count = conteggi[tipo] ?: 0
@@ -312,10 +314,10 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
                 ContextCompat.getColor(this@StatisticheQuartiereActivity,
                     when (tipo) {
                         "rifiuti" -> R.color.chip_rifiuti
-                        "piantumazioni" -> R.color.chip_piantumazioni
+                        "piantumazione" -> R.color.chip_piantumazioni
                         "tronchi" -> R.color.chip_tronchi
                         "censimento" -> R.color.chip_censimento
-                        "buche" -> R.color.chip_buche
+                        "strade" -> R.color.chip_buche
                         else -> R.color.grey_300
                     }
                 )
@@ -329,6 +331,36 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
         pieChart.setEntryLabelColor(ContextCompat.getColor(this, android.R.color.white))
         pieChart.setEntryLabelTextSize(12f)
         pieChart.invalidate()
+
+        pieChart.setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
+            override fun onValueSelected(e: Entry?, h: Highlight?) {
+                val tipo = (e as? PieEntry)?.label
+                if (tipo != null) {
+                    Log.d("FILTRO", "Tipi disponibili: ${listaCompletaSegnalazioni.map { it.typo }.distinct()}")
+                    Log.d("FILTRO", "Tipo richiesto: $tipo")
+                    filtraSegnalazioniPerTipo(tipo)
+                }
+            }
+
+            override fun onNothingSelected() {
+                mostraTutteSegnalazioni()
+            }
+        })
+    }
+
+    private fun filtraSegnalazioniPerTipo(tipo: String) {
+        val filtrate = listaCompletaSegnalazioni
+            .filter { it.typo == tipo }
+            .sortedByDescending { it.imageTime }
+            .take(5)
+        adapterRecenti.submitList(filtrate)
+    }
+
+    private fun mostraTutteSegnalazioni() {
+        val ultime = listaCompletaSegnalazioni
+            .sortedByDescending { it.imageTime }
+            .take(5)
+        adapterRecenti.submitList(ultime)
     }
 
     private fun parseDate(dateStr: String): Date? {
@@ -349,10 +381,10 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
                 ContextCompat.getColorStateList(this@StatisticheQuartiereActivity,
                     when(tipo) {
                         "rifiuti" -> R.color.chip_rifiuti
-                        "piantumazioni" -> R.color.chip_piantumazioni
+                        "piantumazione" -> R.color.chip_piantumazioni
                         "tronchi" -> R.color.chip_tronchi
                         "censimento" -> R.color.chip_censimento
-                        "buche" -> R.color.chip_buche
+                        "strade" -> R.color.chip_buche
                         else -> R.color.grey_300
                     }
                 )

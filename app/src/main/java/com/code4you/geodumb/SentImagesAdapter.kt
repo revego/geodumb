@@ -214,7 +214,7 @@ class SentImagesAdapter(
         // Testo scuro su sfondi chiari, bianco su sfondi scuri
         val textColor = when (item.typo?.uppercase()) {
             "RIFIUTI"            -> ContextCompat.getColor(context, R.color.gray_800)
-            "PIANTUMAZIONI"      -> ContextCompat.getColor(context, R.color.gray_800)
+            "PIANTUMAZIONE"      -> ContextCompat.getColor(context, R.color.gray_800)
             "CENSIMENTO" -> ContextCompat.getColor(context, android.R.color.white)
             "TRONCHI"   -> ContextCompat.getColor(context, android.R.color.white)
             else                 -> ContextCompat.getColor(context, android.R.color.white)

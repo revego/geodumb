@@ -304,6 +304,11 @@ interface ApiService {
 
     // ============ STRADE ENDPOINTS ============
 
+    @GET("strade/no-auth")
+    suspend fun getStradeNoAuth(
+        @Query("city") city: String? = null
+    ): Response<List<RifiutiResponse>>
+
     // ============ TRONCHI ENDPOINTS ============
 
     @GET("tronchi/no-auth")
