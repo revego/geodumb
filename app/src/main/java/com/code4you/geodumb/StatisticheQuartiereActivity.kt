@@ -2,6 +2,7 @@ package com.code4you.geodumb
 
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +20,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.code4you.geodumb.api.RetrofitClient
 import com.code4you.geodumb.api.RifiutiResponse
+import com.code4you.geodumb.api.UserContribution
+import com.code4you.geodumb.api.UserDetail
 import com.code4you.geodumb.databinding.ActivityStatisticheQuartiereBinding
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
@@ -37,9 +40,16 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
     private lateinit var adapterRecenti: RecentsAdapter
     private lateinit var quartiereNome: String
 
+    private lateinit var adapterTopUtenti: TopUtentiAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_statistiche_quartiere)
+
+        val recyclerTop = findViewById<RecyclerView>(R.id.recycler_top_utenti)
+        recyclerTop.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        adapterTopUtenti = TopUtentiAdapter()
+        recyclerTop.adapter = adapterTopUtenti
 
         // Toolbar
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
@@ -122,8 +132,7 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
             }
         }
     }
-
-    private fun aggiornaStatisticheAvanzate(lista: List<RifiutiResponse>) {
+    private suspend fun aggiornaStatisticheAvanzate(lista: List<RifiutiResponse>) {
         // 1. Grafico a torta (usa i conteggi già passati, ma se vuoi usare la lista per avere dati più precisi)
         val conteggi = lista.groupBy { it.typo ?: "altro" }.mapValues { it.value.size }
         aggiornaBarreTipologia(conteggi)
@@ -141,46 +150,69 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
         }
 
         // 3. Ultime segnalazioni (le 5 più recenti)
+        val ultima = lista.maxByOrNull { it.imageTime ?: "" }?.imageTime
+        val ultimaFormattata = ultima?.let {
+            try {
+                SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALIAN)
+                    .format(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ITALIAN).parse(it) ?: Date())
+            } catch (e: Exception) { "N/A" }
+        } ?: "Nessuna"
+        findViewById<TextView>(R.id.tv_ultima).text = "Ultima: $ultimaFormattata"
+        //findViewById<TextView>(R.id.tv_ultima).text = "Ultima: ${ultima ?: "Nessuna"}"
+
+        val totale = lista.size
+        findViewById<TextView>(R.id.tv_totale).text = "Totale: $totale"
+
         val ultime = lista.sortedByDescending { it.imageTime }.take(5)
         adapterRecenti.submitList(ultime)
-    }
 
-    private fun setupPieChart__(conteggi: Map<String, Int>) {
-        val pieChart = findViewById<PieChart>(R.id.pieChart)
-        if (conteggi.isEmpty()) {
-            pieChart.visibility = View.GONE
-            return
-        }
-        pieChart.visibility = View.VISIBLE
+        // 4. TOP CONTRIBUTORI
+        //val topUsers = lista.groupBy { it.userId }
+        //    .mapValues { it.value.size }
+        //    .entries
+        //    .sortedByDescending { it.value }
+        //    .take(5)
+        //    .map { it.key to it.value }
 
-        val entries = conteggi.map { (tipo, count) ->
-            PieEntry(count.toFloat(), tipo)
-        }
+        val topUsers = lista.groupBy { it.userId }
+            .mapValues { it.value.size }
+            .entries
+            .sortedByDescending { it.value }
+            .take(5)
+            .map { it.key to it.value }   // List<Pair<Int?, Int>>
+            //.filter { it.first != null }
 
-        val context = this@StatisticheQuartiereActivity  // <-- Context esterno
-
-        val dataSet = PieDataSet(entries, "").apply {
-            colors = conteggi.keys.map { tipo ->
-                ContextCompat.getColor(context,
-                    when (tipo) {
-                        "rifiuti" -> R.color.chip_rifiuti
-                        "piantumazioni" -> R.color.chip_piantumazioni
-                        "tronchi" -> R.color.chip_tronchi
-                        "censimento" -> R.color.chip_censimento
-                        "buche" -> R.color.chip_buche
-                        else -> R.color.grey_300
-                    }
-                )
+        // Recupera i dettagli per ogni userId
+        val userDetailsMap = mutableMapOf<Int, UserDetail>()
+        topUsers.forEach { (userId, _) ->   // destrutturazione: userId = Pair.first
+            if (userId != null) {
+                try {
+                    Log.d("USER_API", "Richiesta dettagli per userId: $userId")
+                    val detail = RetrofitClient.apiService.getUser(userId)
+                    userDetailsMap[userId] = detail
+                    Log.d("USER_API", "Dettagli ricevuti: ${detail.name}, avatar: ${detail.avatarUrl}")
+                } catch (e: Exception) {
+                    // fallback
+                }
             }
-            valueTextColor = ContextCompat.getColor(context, android.R.color.white)  // <-- usa context
-            valueTextSize = 12f
         }
 
-        pieChart.data = PieData(dataSet)
-        pieChart.description.isEnabled = false
-        pieChart.setEntryLabelColor(ContextCompat.getColor(context, android.R.color.white))
-        pieChart.setEntryLabelTextSize(12f)
-        pieChart.invalidate()
+        // Costruisci la lista per l'adapter
+        val contributions = topUsers.map { (userId, count) ->   // destrutturazione completa
+            val detail = userId?.let { userDetailsMap[userId] }
+            Log.d("USER_DETAIL", "UserId: $userId, name: ${detail?.name}, username: ${detail?.username}")
+            UserContribution(
+                userId = userId,
+                userName = detail?.name
+                    ?: detail?.username
+                    ?: "Utente ${userId ?: "anonimo"}",
+                userAvatar = detail?.avatarUrl,
+                count = count
+            )
+        }
+
+        adapterTopUtenti.submitList(contributions)
+        //adapterTopUtenti.submitList(topUsers)
     }
 
     private fun aggiornaBarreTipologia(conteggi: Map<String, Int>) {
@@ -255,16 +287,6 @@ class StatisticheQuartiereActivity : AppCompatActivity() {
             }
 
             row.addView(barraLayout)
-
-            // Numero
-            //val countView = TextView(this).apply {
-            //    text = count.toString()
-            //    setTextColor(ContextCompat.getColor(this@StatisticheQuartiereActivity, R.color.cl_text_primary))
-            //    textSize = 14f
-            //    layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 0.1f)
-            //    gravity = Gravity.END
-            //}
-            //row.addView(countView)
 
             container.addView(row)
         }
