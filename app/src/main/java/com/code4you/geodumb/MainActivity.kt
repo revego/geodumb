@@ -1,5 +1,9 @@
 package com.code4you.geodumb
 
+//import android.location.LocationRequest
+//import com.bumptech.glide.Priority
+//import com.google.android.gms.location.LocationServices
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -40,6 +44,9 @@ import com.code4you.geodumb.databinding.ActivityMainBinding
 import com.facebook.AccessToken
 import com.facebook.GraphRequest
 import com.facebook.login.LoginManager
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
@@ -50,6 +57,7 @@ import com.squareup.picasso.Picasso
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -74,6 +82,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private lateinit var imageView: ImageView
     private var photoUri: Uri? = null
     private var currentPhotoPath: String? = null
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     // ✅ AGGIUNGI QUI
     private var selectedReportType: String = "rifiuti"
@@ -114,6 +124,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
         // StatsDetailActivity
         findViewById<LinearLayout>(R.id.stats_container).setOnClickListener {
             startActivity(Intent(this, StatsDetailActivity::class.java))
@@ -588,6 +600,62 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 return@setOnClickListener
             }
 
+            // 1. Avvia il rilevamento della posizione (asincrono)
+            lifecycleScope.launch {
+                // Mostra un indicatore di caricamento
+                Toast.makeText(this@MainActivity, "Rilevamento posizione in corso...", Toast.LENGTH_SHORT).show()
+
+                val location = getAccurateLocation()
+                if (location == null) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Posizione non disponibile. Attiva il GPS e riprova.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+
+                // 2. Salva le coordinate
+                latitude = location.latitude
+                longitude = location.longitude
+
+                // 3. Controllo geografico (blocca se fuori Brescia)
+                // To test the block if you are outside Brescia
+                // ===========================================================
+                // if (!GeoUtils.isInsideBrescia(lat, lng, forceTest = true))
+                // ===========================================================
+                if (!GeoUtils.isInsideBrescia(latitude!!, longitude!!)) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Fase sperimentale: solo segnalazioni da Brescia",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+
+                // 4. Se tutto ok, scatta la foto
+                takePhoto()
+            }
+        }
+    }
+
+    private fun initializeViews_() {
+        takePhotoButton = findViewById(R.id.btn_take_photo)
+        sendEmailButton = findViewById(R.id.btn_send_email)
+        imageView = findViewById(R.id.img_photo)
+
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        takePhotoButton.setOnClickListener {
+            if (!canSendReport()) {
+                Toast.makeText(this, "Hai raggiunto il limite di segnalazioni", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (!checkPermissions()) {
+                requestPermissions()
+                return@setOnClickListener
+            }
+
             // 1. Prova a ottenere la posizione (sincrono, ma potrebbe essere null)
             getLastKnownLocation()
 
@@ -612,25 +680,25 @@ class MainActivity : AppCompatActivity(), LocationListener {
             // 4. Se tutto ok, scatta la foto
             takePhoto()
         }
+    }
 
-        //takePhotoButton.setOnClickListener {
-        //    if (!canSendReport()) {
-        //        Toast.makeText(
-        //            this,
-        //            "Hai raggiunto il limite di segnalazioni",
-        //            Toast.LENGTH_SHORT
-        //        ).show()
-        //        return@setOnClickListener
-        //    }
-
-        //    Log.d(TAG, "Take Photo button clicked")
-        //    if (checkPermissions()) {
-        //        getLastKnownLocation()
-        //        takePhoto()
-        //    } else {
-        //        requestPermissions()
-        //    }
-        //}
+    // Nuova funzione sospendente per ottenere la posizione una volta sola
+    private suspend fun getAccurateLocation(): Location? {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return null
+        }
+        return try {
+            fusedLocationClient.getCurrentLocation(
+                LocationRequest.PRIORITY_HIGH_ACCURACY,
+                null
+            ).await()
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun setupBottomNavigation() {
