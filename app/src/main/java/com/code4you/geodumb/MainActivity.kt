@@ -579,22 +579,58 @@ class MainActivity : AppCompatActivity(), LocationListener {
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         takePhotoButton.setOnClickListener {
             if (!canSendReport()) {
-                Toast.makeText(
-                    this,
-                    "Hai raggiunto il limite di segnalazioni",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "Hai raggiunto il limite di segnalazioni", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            Log.d(TAG, "Take Photo button clicked")
-            if (checkPermissions()) {
-                getLastKnownLocation()
-                takePhoto()
-            } else {
+            if (!checkPermissions()) {
                 requestPermissions()
+                return@setOnClickListener
             }
+
+            // 1. Prova a ottenere la posizione (sincrono, ma potrebbe essere null)
+            getLastKnownLocation()
+
+            // 2. Controlla se la posizione è valida
+            val lat = latitude
+            val lng = longitude
+            if (lat == null || lng == null) {
+                Toast.makeText(this, "Posizione non disponibile. Attiva il GPS e riprova.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            // 3. Controllo geografico (blocca se fuori Brescia)
+            // To test the block if you are outside Brescia
+            // ===========================================================
+            // if (!GeoUtils.isInsideBrescia(lat, lng, forceTest = true))
+            // ===========================================================
+            if (!GeoUtils.isInsideBrescia(lat,  lng)) {
+                Toast.makeText(this, "Fase sperimentale: solo segnalazioni da Brescia", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            // 4. Se tutto ok, scatta la foto
+            takePhoto()
         }
+
+        //takePhotoButton.setOnClickListener {
+        //    if (!canSendReport()) {
+        //        Toast.makeText(
+        //            this,
+        //            "Hai raggiunto il limite di segnalazioni",
+        //            Toast.LENGTH_SHORT
+        //        ).show()
+        //        return@setOnClickListener
+        //    }
+
+        //    Log.d(TAG, "Take Photo button clicked")
+        //    if (checkPermissions()) {
+        //        getLastKnownLocation()
+        //        takePhoto()
+        //    } else {
+        //        requestPermissions()
+        //    }
+        //}
     }
 
     private fun setupBottomNavigation() {
@@ -703,6 +739,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             latitude = location?.latitude
             longitude = location?.longitude
+
         }
     }
 
